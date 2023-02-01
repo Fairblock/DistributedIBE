@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/drand/kyber"
 	bls "github.com/drand/kyber-bls12381"
-	"github.com/drand/kyber/encrypt/ibe"
+	
 	"github.com/drand/kyber/pairing"
 	"math/big"
 	"reflect"
@@ -142,7 +142,7 @@ func TestDistributedIBE(n int, t int) {
 	message := "hi"
 	ID_round1 := "3000"
 	// Encryption
-	Cipher_round1, _ := ibe.Encrypt(s, PK, []byte(ID_round1), []byte(message))
+	Cipher_round1, _ := Encrypt(s, PK, []byte(ID_round1), []byte(message))
 
 	// Extracting the keys using shares
 	var sk []ExtractedKey
@@ -157,7 +157,7 @@ func TestDistributedIBE(n int, t int) {
 		c, []byte(ID_round1))
 	
 	// Decryption
-	decrypted, _ := ibe.Decrypt(s, SK_round1, Cipher_round1)
+	decrypted, _ := Decrypt(s, SK_round1, Cipher_round1)
 
 	// Verify that the decrypted message matches the original message
 	if !reflect.DeepEqual(message, string(decrypted[:])) {

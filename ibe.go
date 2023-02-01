@@ -1,4 +1,4 @@
-package ibe
+package tlock
 
 import (
 	"bytes"
@@ -25,9 +25,9 @@ func H2Tag() []byte {
 }
 
 // H3Tag is the domain separation tag for the H3 hash function
-func H3Tag() []byte {
-	return []byte("IBE-H3")
-}
+// func H3Tag() []byte {
+// 	return []byte("IBE-H3")
+// }
 
 // H4Tag is the domain separation tag for the H4 hash function
 func H4Tag() []byte {
@@ -39,7 +39,7 @@ func H4Tag() []byte {
 // about the scheme.
 // - master is the master key on G1
 // - ID is the ID towards which we encrypt the message
-// - msg is the actual message
+// - msg is the actual message 
 // - seed is the random seed to generate the random element (sigma) of the encryption
 // The suite must produce points which implements the `HashablePoint` interface.
 func Encrypt(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertext, error) {
@@ -132,25 +132,25 @@ func Decrypt(s pairing.Suite, private kyber.Point, c *Ciphertext) ([]byte, error
 }
 
 // hash sigma and msg to get r
-func h3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
-	h3 := s.Hash()
+// func h3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
+// 	h3 := s.Hash()
 
-	if _, err := h3.Write(H3Tag()); err != nil {
-		return nil, fmt.Errorf("err hashing h3 tag: %v", err)
-	}
-	if _, err := h3.Write(sigma); err != nil {
-		return nil, fmt.Errorf("err hashing sigma: %v", err)
-	}
-	_, _ = h3.Write(msg)
-	hashable, ok := s.G1().Scalar().(kyber.HashableScalar)
-	if !ok {
-		panic("scalar can't be created from hash")
-	}
+// 	if _, err := h3.Write(H3Tag()); err != nil {
+// 		return nil, fmt.Errorf("err hashing h3 tag: %v", err)
+// 	}
+// 	if _, err := h3.Write(sigma); err != nil {
+// 		return nil, fmt.Errorf("err hashing sigma: %v", err)
+// 	}
+// 	_, _ = h3.Write(msg)
+// 	hashable, ok := s.G1().Scalar().(kyber.HashableScalar)
+// 	if !ok {
+// 		panic("scalar can't be created from hash")
+// 	}
 
-	h3Reader := bytes.NewReader(h3.Sum(nil))
+// 	h3Reader := bytes.NewReader(h3.Sum(nil))
 
-	return hashable.Hash(s, h3Reader)
-}
+// 	return hashable.Hash(s, h3Reader)
+// }
 
 func h4(s pairing.Suite, sigma []byte, length int) ([]byte, error) {
 	h4 := s.Hash()
