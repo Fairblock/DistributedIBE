@@ -49,7 +49,7 @@ func bigFromHex(hex string) *big.Int {
 }
 
 // n keepers in total, threshold = t, (t+1) of them participated in decryption
-func TestDistributedIBE(n int, t int) {
+func TestDistributedIBE(n int, t int, message string, ID_round1 string) (bool, error) {
 
 	// Setup 
 	s := bls.NewBLS12381Suite()
@@ -89,10 +89,7 @@ func TestDistributedIBE(n int, t int) {
 	}
 
 	
-	// The message: string
-	// ID         : Any string but in this setting, a specific block number
-	message := "hi"
-	ID_round1 := "3000"
+	
 	// Encryption
 	Cipher_round1, _ := Encrypt(s, PK, []byte(ID_round1), []byte(message))
 
@@ -114,7 +111,78 @@ func TestDistributedIBE(n int, t int) {
 
 	// Verify that the decrypted message matches the original message
 	if !reflect.DeepEqual(message, string(decrypted[:])) {
-		fmt.Errorf(string(decrypted[:]))
+		return false,fmt.Errorf("wrong decrypted message: %s",string(decrypted[:]))
+	}
+return true,nil
+}
+
+
+// n keepers in total, threshold = t, (t+1) of them participated in decryption
+func TestDistributedIBEFail(n int, t int, message string, ID_round1 string) (bool, error) {
+
+	// Setup 
+	s := bls.NewBLS12381Suite()
+	var secretVal []byte = []byte{187}
+	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	secret, _ := h3(s, secretVal, []byte("msg"))
+
+	signers := []int{}
+	for i := 0; i < n; i++ {
+		signers = append(signers, 0)
+	}
+	j := 0
+	for ; j < t-1 ; {
+		
+		randomVal,_ := rand.Int(rand.Reader, big.NewInt(int64(n)))
+		if signers[randomVal.Int64()] == 0{
+			signers[randomVal.Int64()] = 1
+			j++
+		}
+	}
+	
+	
+	// generating secret shares
+	
+	Shares,_ := GenerateShares(uint32(n),uint32(t),secret,qBig)
+
+    // Public Key
+	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+
+	// Generating commitments
+	
+	var c []Commitment
+	for j := 0; j < n; j++ {
+		if signers[j] == 1 {
+		c = append(c, Commitment{s.G1().Point().Mul(Shares[j].Value, s.G1().Point().Base()), uint32(j+1)})
+		}
 	}
 
+	
+	
+	// Encryption
+	Cipher_round1, _ := Encrypt(s, PK, []byte(ID_round1), []byte(message))
+
+	// Extracting the keys using shares
+	var sk []ExtractedKey
+	for k := 0; k < n; k++ {
+		if signers[k] == 1 {
+		sk = append(sk, Extract(s, Shares[k].Value, uint32(k+1), []byte(ID_round1)))
+		}
+	}
+	
+	// Aggregating keys to get the secret key for decryption
+	SK_round1, _ := AggregateSK(s,
+		sk,
+		c, []byte(ID_round1))
+	
+	// Decryption
+	decrypted, err := Decrypt(s, SK_round1, Cipher_round1)
+	if err != nil{
+		return false,err
+	}
+	// Verify that the decrypted message matches the original message
+	if !reflect.DeepEqual(message, string(decrypted[:])) {
+		return false,fmt.Errorf(string(decrypted[:]))
+	}
+return true,nil
 }
