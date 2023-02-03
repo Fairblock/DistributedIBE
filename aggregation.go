@@ -2,7 +2,7 @@ package tlock
 
 import (
 	"github.com/drand/kyber"
-	bls "github.com/drand/kyber-bls12381"
+	
 	"github.com/drand/kyber/pairing"
 )
 
@@ -44,31 +44,6 @@ func processSK(suite pairing.Suite, share ExtractedKey, S []uint32) ExtractedKey
 	return ExtractedKey{idenityKey, share.index}
 }
 
-func lagrangeCoefficient(suite pairing.Suite, signer uint32, S []uint32) kyber.Scalar {
-	nominator := bls.NewKyberScalar()
-	temp := bls.NewKyberScalar()
-	temp1 := bls.NewKyberScalar()
-	nominator.SetInt64(int64(1))
-	denominator := bls.NewKyberScalar()
-	denominator.SetInt64(int64(1))
-
-	for _, s := range S {
-		if s != signer {
-			nominator.Mul(nominator, kyber.Scalar.SetInt64(temp, int64(s)))
-
-			denominator.Mul(denominator,
-				kyber.Scalar.Sub(temp,
-					kyber.Scalar.SetInt64(temp, int64(s)),
-					kyber.Scalar.SetInt64(temp1, int64(signer))))
-
-		}
-	}
-
-	var outScalar kyber.Scalar = bls.NewKyberScalar()
-	kyber.Scalar.Div(outScalar, nominator, denominator)
-
-	return outScalar
-}
 
 func Aggregate(keys ...kyber.Point) kyber.Point {
 	var sk kyber.Point = keys[0]

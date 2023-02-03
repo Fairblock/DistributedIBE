@@ -8,7 +8,7 @@ import (
 func TestDistributedIBEE(t *testing.T) {
 
 
-	TestDistributedIBE(5,3)
+	TestDistributedIBE(6,3)
 	
 	
 }
