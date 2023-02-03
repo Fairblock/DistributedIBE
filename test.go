@@ -56,12 +56,7 @@ func TestDistributedIBE(n int, t int) {
 	var secretVal []byte = []byte{187}
 	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
 	secret, _ := h3(s, secretVal, []byte("msg"))
-	p, err := createRandomPolynomial(uint32(t), secret, qBig)
 
-	if err != nil {
-		fmt.Errorf("could not create a random polynomial")
-		return
-	}
 	signers := []int{}
 	for i := 0; i < n; i++ {
 		signers = append(signers, 0)
@@ -78,11 +73,9 @@ func TestDistributedIBE(n int, t int) {
 	
 	
 	// generating secret shares
-	var Shares []kyber.Scalar
-	for i := 0; i < n; i++ {
-		Shares = append(Shares,bls.NewKyberScalar())
-		Shares[i] = p.eval(kyber.Scalar.SetInt64(Shares[i], int64(i+1)))
-	}
+	
+	Shares,_ := GenerateShares(uint32(n),uint32(t),secret,qBig)
+
     // Public Key
 	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
 
@@ -91,7 +84,7 @@ func TestDistributedIBE(n int, t int) {
 	var c []Commitment
 	for j := 0; j < n; j++ {
 		if signers[j] == 1 {
-		c = append(c, Commitment{s.G1().Point().Mul(Shares[j], s.G1().Point().Base()), uint32(j+1)})
+		c = append(c, Commitment{s.G1().Point().Mul(Shares[j].Value, s.G1().Point().Base()), uint32(j+1)})
 		}
 	}
 
@@ -107,7 +100,7 @@ func TestDistributedIBE(n int, t int) {
 	var sk []ExtractedKey
 	for k := 0; k < n; k++ {
 		if signers[k] == 1 {
-		sk = append(sk, Extract(s, Shares[k], uint32(k+1), []byte(ID_round1)))
+		sk = append(sk, Extract(s, Shares[k].Value, uint32(k+1), []byte(ID_round1)))
 		}
 	}
 	
