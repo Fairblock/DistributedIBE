@@ -2,15 +2,17 @@ package tlock
 
 import (
 	"bytes"
-	
+	"crypto/rand"
+
 	"fmt"
+
 	"github.com/drand/kyber"
 	bls "github.com/drand/kyber-bls12381"
-	
-	"github.com/drand/kyber/pairing"
+
 	"math/big"
 	"reflect"
-	
+
+	"github.com/drand/kyber/pairing"
 )
 
 func H3Tag() []byte {
@@ -48,7 +50,7 @@ func bigFromHex(hex string) *big.Int {
 
 // n keepers in total, threshold = t, (t+1) of them participated in decryption
 func TestDistributedIBE(n int, t int) {
-	
+
 	// Setup 
 	s := bls.NewBLS12381Suite()
 	var secretVal []byte = []byte{187}
@@ -60,7 +62,20 @@ func TestDistributedIBE(n int, t int) {
 		fmt.Errorf("could not create a random polynomial")
 		return
 	}
-
+	signers := []int{}
+	for i := 0; i < n; i++ {
+		signers = append(signers, 0)
+	}
+	j := 0
+	for ; j < t+1 ; {
+		
+		randomVal,_ := rand.Int(rand.Reader, big.NewInt(int64(n)))
+		if signers[randomVal.Int64()] == 0{
+			signers[randomVal.Int64()] = 1
+			j++
+		}
+	}
+	
 	
 	// generating secret shares
 	var Shares []kyber.Scalar
@@ -72,10 +87,12 @@ func TestDistributedIBE(n int, t int) {
 	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
 
 	// Generating commitments
+	
 	var c []Commitment
-	for j := 0; j < t+1; j++ {
-
+	for j := 0; j < n; j++ {
+		if signers[j] == 1 {
 		c = append(c, Commitment{s.G1().Point().Mul(Shares[j], s.G1().Point().Base()), uint32(j+1)})
+		}
 	}
 
 	
@@ -88,9 +105,10 @@ func TestDistributedIBE(n int, t int) {
 
 	// Extracting the keys using shares
 	var sk []ExtractedKey
-	for k := 0; k < t+1; k++ {
-
+	for k := 0; k < n; k++ {
+		if signers[k] == 1 {
 		sk = append(sk, Extract(s, Shares[k], uint32(k+1), []byte(ID_round1)))
+		}
 	}
 	
 	// Aggregating keys to get the secret key for decryption

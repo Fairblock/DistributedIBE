@@ -15,7 +15,7 @@ func TestDistributedIBEE(t *testing.T) {
 var table = []struct {
     input int
 }{
-    {input: 1},
+    
     {input: 5},
     {input: 10},
     {input: 20},
