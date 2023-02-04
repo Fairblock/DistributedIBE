@@ -39,15 +39,14 @@ func H4Tag() []byte {
 // about the scheme.
 // - master is the master key on G1
 // - ID is the ID towards which we encrypt the message
-// - msg is the actual message 
+// - msg is the actual message
 // - seed is the random seed to generate the random element (sigma) of the encryption
 // The suite must produce points which implements the `HashablePoint` interface.
 func Encrypt(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertext, error) {
-	
+
 	if len(msg) > s.Hash().Size() {
 		return nil, errors.New("plaintext too long for the hash function provided")
 	}
-	
 
 	hG2, ok := s.G2().Point().(kyber.HashablePoint)
 	if !ok {
@@ -69,7 +68,7 @@ func Encrypt(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertext, 
 	//fmt.Println(sigma)
 	// 4. Compute U = rP
 	U := s.G1().Point().Mul(r, s.G1().Point().Base())
-	
+
 	// 5. Compute V = sigma XOR H2(rGid)
 	rGid := Gid.Mul(r, Gid) // even in Gt, it's additive notation
 	hrGid, err := gtToHash(s, rGid, len(msg), H2Tag())
@@ -84,7 +83,7 @@ func Encrypt(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertext, 
 		return nil, err
 	}
 	W := xor(msg, hsigma)
-	
+
 	return &Ciphertext{
 		U: U,
 		V: V,
@@ -96,7 +95,6 @@ func Decrypt(s pairing.Suite, private kyber.Point, c *Ciphertext) ([]byte, error
 	if len(c.W) > s.Hash().Size() {
 		return nil, errors.New("ciphertext too long for the hash function provided")
 	}
-	
 
 	rGid := s.Pair(c.U, private)
 	hrGid, err := gtToHash(s, rGid, len(c.W), H2Tag())
@@ -107,7 +105,7 @@ func Decrypt(s pairing.Suite, private kyber.Point, c *Ciphertext) ([]byte, error
 		return nil, fmt.Errorf("XorSigma is of invalid length: exp %d vs got %d", len(hrGid), len(c.V))
 	}
 	sigma := xor(hrGid, c.V)
-	
+
 	// 2. Compute M = W XOR H4(sigma)
 	hsigma, err := h4(s, sigma, len(c.W))
 	if err != nil {
@@ -115,18 +113,18 @@ func Decrypt(s pairing.Suite, private kyber.Point, c *Ciphertext) ([]byte, error
 	}
 
 	msg := xor(hsigma, c.W)
-	
+
 	// 3. Check U = rP
 	r, err := h3(s, sigma, msg)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	rP := s.G1().Point().Mul(r, s.G1().Point().Base())
 	if !rP.Equal(c.U) {
 		return nil, fmt.Errorf("invalid proof: rP check failed")
 	}
-	
+
 	return msg, nil
 
 }

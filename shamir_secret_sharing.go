@@ -86,23 +86,20 @@ func GenerateShares(numberOfShares, threshold uint32, masterSecretKey kyber.Scal
 
 func lagrangeCoefficientFromShares(indexJ kyber.Scalar, shares []Share) kyber.Scalar {
 	nominator := bls.NewKyberScalar().SetInt64(int64(1))
-	//nominator.SetInt64(int64(1))
 	denominator := bls.NewKyberScalar().SetInt64(int64(1))
-	//denominator.SetInt64(int64(1))
 
 	for _, share := range shares {
 		if share.Index != indexJ {
 			nominator.Mul(nominator, share.Index)
-			//nominator.Mod(nominator, groupOrder)
 
 			denominator.Mul(denominator, bls.NewKyberScalar().SetInt64(int64(1)).Add(share.Index, bls.NewKyberScalar().SetInt64(int64(1)).Neg(indexJ)))
-			//denominator.Mod(denominator, groupOrder)
+
 		}
 	}
 	return bls.NewKyberScalar().SetInt64(int64(1)).Div(nominator, denominator) //Inverse will panic if denominator is 0
 }
 
-func lagrangeCoefficient(suite pairing.Suite, signer uint32, S []uint32) kyber.Scalar {
+func LagrangeCoefficient(suite pairing.Suite, signer uint32, S []uint32) kyber.Scalar {
 	nominator := bls.NewKyberScalar()
 	temp := bls.NewKyberScalar()
 	temp1 := bls.NewKyberScalar()

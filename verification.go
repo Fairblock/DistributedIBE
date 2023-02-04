@@ -11,10 +11,10 @@ type Commitment struct {
 	index uint32
 }
 
-func verifyShare(s pairing.Suite, c Commitment, share ExtractedKey, Qid kyber.Point) bool {
+func verifyShare(s pairing.Suite, c Commitment, share ExtractedKey, qid kyber.Point) bool {
 
 	//e(s1 * P, H(ID))
-	a := s.Pair(c.sP, Qid)
+	a := s.Pair(c.sP, qid)
 	//e(P, s1 * H(ID))
 	b := s.Pair(s.G1().Point().Base(), share.sk)
 	return reflect.DeepEqual(a, b)
