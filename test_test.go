@@ -2,19 +2,47 @@ package tlock
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 )
 
-func TestDistributedIBEE(t *testing.T) {
+func TestDistributedIBE(t *testing.T) {
 
-	res, err := TestDistributedIBE(6, 3, "this is a size 32 bytes message!", "300")
+	res, err := DistributedIBE(6, 3, "this is a size 32 bytes message!", "300")
 	if res == false {
 		t.Errorf(err.Error())
 	}
 
 }
 
-var table = []struct {
+func TestDistributedIBEFail(t *testing.T) {
+
+	_, err := DistributedIBEFail(6, 3, "this is a size 32 bytes message!", "300")
+	if err == nil {
+		t.Errorf("Decryption worked with less than threshold keys!")
+	}
+
+}
+
+func TestDistributedIBEFInvalidCommitment(t *testing.T) {
+
+	_, err := DistributedIBEFInvalidCommitment(6, 3, "this is a size 32 bytes message!", "300")
+	if err == nil {
+		t.Errorf("Wrong commitment accepted!")
+	}
+
+}
+
+func TestDistributedIBEFInvalidShare(t *testing.T) {
+
+	_, err := DistributedIBEFInvalidShare(6, 3, "this is a size 32 bytes message!", "300")
+	if err == nil {
+		t.Errorf("Wrong share accepted!")
+	}
+
+}
+
+var participants = []struct {
 	input int
 }{
 
@@ -26,21 +54,47 @@ var table = []struct {
 }
 
 func BenchmarkDistributedIBEE(b *testing.B) {
-	for _, v := range table {
+	for _, v := range participants {
 		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				TestDistributedIBE(v.input, v.input-1, "this is a size 32 bytes message!", "300")
+				DistributedIBE(v.input, v.input-1, "this is a size 32 bytes message!", "300")
 			}
 		})
 	}
 
 }
 
-func TestDistributedIBEFailingCase(t *testing.T) {
 
-	_, err := TestDistributedIBEFail(6, 3, "this is a size 32 bytes message!", "300")
-	if err == nil {
-		t.Errorf("Decryption worked with less than threshold keys!")
+var messageSize = []struct {
+	input int
+}{
+
+	{input: 1},
+	{input: 2},
+	{input: 4},
+	{input: 8},
+	{input: 16},
+    {input: 32},
+}
+
+
+
+func randomStringGenerator(n int) string {
+    var letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    byteString := make([]byte, n)
+    for i := range byteString {
+        byteString[i] = letters[rand.Intn(len(letters))]
+    }
+    return string(byteString)
+}
+
+func BenchmarkDistributedIBEEMessageSize(b *testing.B) {
+	for _, v := range messageSize {
+		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				DistributedIBE(10, 7, randomStringGenerator(v.input), "300")
+			}
+		})
 	}
 
 }
