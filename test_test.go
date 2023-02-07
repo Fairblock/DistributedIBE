@@ -2,13 +2,20 @@ package tlock
 
 import (
 	"fmt"
+	"bytes"
+	"reflect"
+
 	"math/rand"
+
 	"testing"
 )
 
 func TestDistributedIBE(t *testing.T) {
+	message := "this is a long message with more than 32 bytes! this is a long message with more than 32 bytes!"
+	var plainData bytes.Buffer
+	plainData.WriteString(message)
 
-	res, err := DistributedIBE(6, 3, "this is a size 32 bytes message!", "300")
+	res, err := DistributedIBE(6, 3, "300",plainData, message)
 	if res == false {
 		t.Errorf(err.Error())
 	}
@@ -17,25 +24,44 @@ func TestDistributedIBE(t *testing.T) {
 
 func TestDistributedIBEFail(t *testing.T) {
 
-	_, err := DistributedIBEFail(6, 3, "this is a size 32 bytes message!", "300")
-	if err == nil {
-		t.Errorf("Decryption worked with less than threshold keys!")
-	}
+	message := "this is a long message with more than 32 bytes!"
+	var plainData bytes.Buffer
+	plainData.WriteString(message)
 
+	res, err := DistributedIBEFail(6, 3, "300",plainData, message)
+
+	if res == true {
+		t.Errorf("Decryption worked with lower than threshold shares!")
+	}
+	if !reflect.DeepEqual("age decrypt: errNoMatch", err.Error()) {
+		t.Errorf(err.Error())
+	}
 }
 
 func TestDistributedIBEFInvalidCommitment(t *testing.T) {
 
-	_, err := DistributedIBEFInvalidCommitment(6, 3, "this is a size 32 bytes message!", "300")
+	message := "this is a long message with more than 32 bytes!"
+	var plainData bytes.Buffer
+	plainData.WriteString(message)
+
+	_, err := DistributedIBEFInvalidCommitment(6, 3, "300",plainData, message)
+	
 	if err == nil {
 		t.Errorf("Wrong commitment accepted!")
 	}
+
+
 
 }
 
 func TestDistributedIBEFInvalidShare(t *testing.T) {
 
-	_, err := DistributedIBEFInvalidShare(6, 3, "this is a size 32 bytes message!", "300")
+	message := "this is a long message with more than 32 bytes!"
+	var plainData bytes.Buffer
+	plainData.WriteString(message)
+
+	_, err := DistributedIBEFInvalidShare(6, 3, "300",plainData, message)
+
 	if err == nil {
 		t.Errorf("Wrong share accepted!")
 	}
@@ -54,10 +80,13 @@ var participants = []struct {
 }
 
 func BenchmarkDistributedIBEE(b *testing.B) {
+	message := "this is a long message with more than 32 bytes!"
+	var plainData bytes.Buffer
+	plainData.WriteString(message)
 	for _, v := range participants {
 		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				DistributedIBE(v.input, v.input-1, "this is a size 32 bytes message!", "300")
+			DistributedIBE(6, 3, "300",plainData, message)
 			}
 		})
 	}
@@ -69,12 +98,12 @@ var messageSize = []struct {
 	input int
 }{
 
-	{input: 1},
-	{input: 2},
-	{input: 4},
 	{input: 8},
-	{input: 16},
-    {input: 32},
+	{input: 32},
+	{input: 128},
+	{input: 512},
+	{input: 2048},
+    {input: 8192},
 }
 
 
@@ -89,10 +118,14 @@ func randomStringGenerator(n int) string {
 }
 
 func BenchmarkDistributedIBEEMessageSize(b *testing.B) {
+
 	for _, v := range messageSize {
 		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
+			message := randomStringGenerator(v.input)
+				var plainData bytes.Buffer
+				plainData.WriteString(message)
 			for i := 0; i < b.N; i++ {
-				DistributedIBE(10, 7, randomStringGenerator(v.input), "300")
+				DistributedIBE(6, 3, "300",plainData, message)
 			}
 		})
 	}

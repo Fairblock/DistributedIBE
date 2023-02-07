@@ -3,6 +3,8 @@ package tlock
 import (
 	"bytes"
 	"crypto/rand"
+	//"io"
+	//"strings"
 
 	"fmt"
 
@@ -48,7 +50,7 @@ func bigFromHex(hex string) *big.Int {
 }
 
 // n keepers in total, threshold = t, (t+1) of them participated in decryption
-func DistributedIBE(n int, t int, message string, ID string) (bool, error) {
+func DistributedIBE(n int, t int, ID string, src bytes.Buffer, message string) (bool, error) {
 
 	// Setup
 	s := bls.NewBLS12381Suite()
@@ -87,7 +89,8 @@ func DistributedIBE(n int, t int, message string, ID string) (bool, error) {
 	}
 
 	// Encryption
-	Cipher, _ := Encrypt(s, PK, []byte(ID), []byte(message))
+	var cipherData bytes.Buffer
+	_ = Encrypt(PK, []byte(ID), &cipherData, &src)
 
 	// Extracting the keys using shares
 	var sk []ExtractedKey
@@ -101,19 +104,19 @@ func DistributedIBE(n int, t int, message string, ID string) (bool, error) {
 	SK, _ := AggregateSK(s,
 		sk,
 		c, []byte(ID))
-
+	var plainData bytes.Buffer
 	// Decryption
-	decrypted, _ := Decrypt(s, SK, Cipher)
+	_ = Decrypt(PK, SK, &plainData, &cipherData)
 
 	// Verify that the decrypted message matches the original message
-	if !reflect.DeepEqual(message, string(decrypted[:])) {
-		return false, fmt.Errorf("wrong decrypted message: %s", string(decrypted[:]))
+	if !reflect.DeepEqual(string(plainData.Bytes()[:]), message) {
+		return false, fmt.Errorf("wrong decrypted message: %s VS %s", string(plainData.Bytes()[:]), message)
 	}
 	return true, nil
 }
 
-// n keepers in total, threshold = t, (t-1) of them participated in decryption
-func DistributedIBEFail(n int, t int, message string, ID string) (bool, error) {
+//n keepers in total, threshold = t, (t-1) of them participated in decryption
+func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message string) (bool, error) {
 
 	// Setup
 	s := bls.NewBLS12381Suite()
@@ -152,7 +155,8 @@ func DistributedIBEFail(n int, t int, message string, ID string) (bool, error) {
 	}
 
 	// Encryption
-	Cipher, _ := Encrypt(s, PK, []byte(ID), []byte(message))
+	var cipherData bytes.Buffer
+	_ = Encrypt(PK, []byte(ID), &cipherData, &src)
 
 	// Extracting the keys using shares
 	var sk []ExtractedKey
@@ -166,21 +170,22 @@ func DistributedIBEFail(n int, t int, message string, ID string) (bool, error) {
 	SK, _ := AggregateSK(s,
 		sk,
 		c, []byte(ID))
-
+	var plainData bytes.Buffer
 	// Decryption
-	decrypted, err := Decrypt(s, SK, Cipher)
+	err := Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
 	// Verify that the decrypted message matches the original message
-	if !reflect.DeepEqual(message, string(decrypted[:])) {
-		return false, fmt.Errorf(string(decrypted[:]))
+	if !reflect.DeepEqual(string(plainData.Bytes()[:]), message) {
+		return false, fmt.Errorf("wrong decrypted message: %s VS %s", string(plainData.Bytes()[:]), message)
 	}
+
 	return true, nil
 }
 
 // n keepers in total, threshold = t, (t+1) of them participated in decryption but one commitment is wrong
-func DistributedIBEFInvalidCommitment(n int, t int, message string, ID string) (bool, error) {
+func DistributedIBEFInvalidCommitment(n int, t int, ID string, src bytes.Buffer, message string) (bool, error) {
 
 	// Setup
 	s := bls.NewBLS12381Suite()
@@ -219,10 +224,9 @@ func DistributedIBEFInvalidCommitment(n int, t int, message string, ID string) (
 	}
 
 	// Encryption
-	Cipher, err := Encrypt(s, PK, []byte(ID), []byte(message))
-	if err != nil {
-		return false,err
-	}
+	var cipherData bytes.Buffer
+	_ = Encrypt(PK, []byte(ID), &cipherData, &src)
+
 	// Extracting the keys using shares
 	var sk []ExtractedKey
 	for k := 0; k < n; k++ {
@@ -231,28 +235,32 @@ func DistributedIBEFInvalidCommitment(n int, t int, message string, ID string) (
 		}
 	}
 	// chaning the first commitment to something else
+
 	c[0] = c[1]
 	// Aggregating keys to get the secret key for decryption
-	SK,invalids := AggregateSK(s,
+	SK, invalids := AggregateSK(s,
 		sk,
 		c, []byte(ID))
-	if len(invalids) != 0{
-		return false, fmt.Errorf("invalids: %d",invalids)
+	if len(invalids) != 0 {
+		return false, fmt.Errorf("invalids: %d", invalids)
 	}
+	var plainData bytes.Buffer
 	// Decryption
-	decrypted, errDecrypt := Decrypt(s, SK, Cipher)
-	if errDecrypt != nil {
-		return false,errDecrypt
+	err := Decrypt(PK, SK, &plainData, &cipherData)
+	if err != nil {
+		return false, err
 	}
 	// Verify that the decrypted message matches the original message
-	if !reflect.DeepEqual(message, string(decrypted[:])) {
-		return false, fmt.Errorf("wrong decrypted message: %s", string(decrypted[:]))
+	if !reflect.DeepEqual(string(plainData.Bytes()[:]), message) {
+		return false, fmt.Errorf("wrong decrypted message: %s VS %s", string(plainData.Bytes()[:]), message)
 	}
+
 	return true, nil
+
 }
 
 // n keepers in total, threshold = t, (t+1) of them participated in decryption but one share is wrong
-func DistributedIBEFInvalidShare(n int, t int, message string, ID string) (bool, error) {
+func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, message string) (bool, error) {
 
 	// Setup
 	s := bls.NewBLS12381Suite()
@@ -277,7 +285,7 @@ func DistributedIBEFInvalidShare(n int, t int, message string, ID string) (bool,
 	// generating secret shares
 
 	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
-	
+
 	// Public Key
 	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
 
@@ -291,10 +299,9 @@ func DistributedIBEFInvalidShare(n int, t int, message string, ID string) (bool,
 	}
 
 	// Encryption
-	Cipher, err := Encrypt(s, PK, []byte(ID), []byte(message))
-	if err != nil {
-		return false,err
-	}
+	var cipherData bytes.Buffer
+	_ = Encrypt(PK, []byte(ID), &cipherData, &src)
+
 	// Extracting the keys using shares
 	var sk []ExtractedKey
 	for k := 0; k < n; k++ {
@@ -303,23 +310,25 @@ func DistributedIBEFInvalidShare(n int, t int, message string, ID string) (bool,
 		}
 	}
 	// chaning the first extracted key to something else (previous value * 2 in this case)
-	sk[0].sk = sk[0].sk.Add(sk[0].sk,sk[0].sk)
-
+	sk[0].sk = sk[0].sk.Add(sk[0].sk, sk[0].sk)
 	// Aggregating keys to get the secret key for decryption
-	SK,invalids := AggregateSK(s,
+	SK, invalids := AggregateSK(s,
 		sk,
 		c, []byte(ID))
-	if len(invalids) != 0{
-		return false, fmt.Errorf("invalids: %d",invalids)
+	if len(invalids) != 0 {
+		return false, fmt.Errorf("invalids: %d", invalids)
 	}
+	var plainData bytes.Buffer
 	// Decryption
-	decrypted, errDecrypt := Decrypt(s, SK, Cipher)
-	if errDecrypt != nil {
-		return false,errDecrypt
+	err := Decrypt(PK, SK, &plainData, &cipherData)
+	if err != nil {
+		return false, err
 	}
 	// Verify that the decrypted message matches the original message
-	if !reflect.DeepEqual(message, string(decrypted[:])) {
-		return false, fmt.Errorf("wrong decrypted message: %s", string(decrypted[:]))
+	if !reflect.DeepEqual(string(plainData.Bytes()[:]), message) {
+		return false, fmt.Errorf("wrong decrypted message: %s VS %s", string(plainData.Bytes()[:]), message)
 	}
+
 	return true, nil
+
 }

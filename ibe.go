@@ -42,7 +42,7 @@ func H4Tag() []byte {
 // - msg is the actual message
 // - seed is the random seed to generate the random element (sigma) of the encryption
 // The suite must produce points which implements the `HashablePoint` interface.
-func Encrypt(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertext, error) {
+func EncryptIBE(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertext, error) {
 
 	if len(msg) > s.Hash().Size() {
 		return nil, errors.New("plaintext too long for the hash function provided")
@@ -91,7 +91,7 @@ func Encrypt(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertext, 
 	}, nil
 }
 
-func Decrypt(s pairing.Suite, private kyber.Point, c *Ciphertext) ([]byte, error) {
+func DecryptIBE(s pairing.Suite, private kyber.Point, c *Ciphertext) ([]byte, error) {
 	if len(c.W) > s.Hash().Size() {
 		return nil, errors.New("ciphertext too long for the hash function provided")
 	}

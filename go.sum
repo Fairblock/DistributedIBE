@@ -1,3 +1,5 @@
+filippo.io/age v1.1.1 h1:pIpO7l151hCnQ4BdyBujnGP2YlUo0uj6sAVNHGBvXHg=
+filippo.io/age v1.1.1/go.mod h1:l03SrzDUrBkdBx8+IILdnn2KZysqQdbEBUQ4p3sqEQE=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/drand/kyber v1.1.17 h1:A7zHO2KJj1NssXKLR1U0Wlwjb4tC+SG6YSIseFDmV4U=
 github.com/drand/kyber v1.1.17/go.mod h1:2SbJSUoZt8D61uMWH2QTEWqzK9BBYzcObeb1TKDKwvo=
