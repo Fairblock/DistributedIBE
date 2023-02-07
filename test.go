@@ -140,7 +140,7 @@ func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message strin
 
 	// generating secret shares
 
-	Shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
 
 	// Public Key
 	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
@@ -150,7 +150,7 @@ func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message strin
 	var c []Commitment
 	for j := 0; j < n; j++ {
 		if signers[j] == 1 {
-			c = append(c, Commitment{s.G1().Point().Mul(Shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
+			c = append(c, Commitment{s.G1().Point().Mul(shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
 		}
 	}
 
@@ -162,7 +162,7 @@ func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message strin
 	var sk []ExtractedKey
 	for k := 0; k < n; k++ {
 		if signers[k] == 1 {
-			sk = append(sk, Extract(s, Shares[k].Value, uint32(k+1), []byte(ID)))
+			sk = append(sk, Extract(s, shares[k].Value, uint32(k+1), []byte(ID)))
 		}
 	}
 

@@ -32,7 +32,7 @@ func Decrypt(pk kyber.Point, sk kyber.Point,dst io.Writer, src io.Reader) error 
 		src = rr
 	}
 	
-	r, err := Decrypt2(pk,sk,src)
+	r, err := decrypt(pk,sk,src)
 	if err != nil {
 		return fmt.Errorf("age decrypt: %w", err)
 	}
@@ -44,7 +44,7 @@ func Decrypt(pk kyber.Point, sk kyber.Point,dst io.Writer, src io.Reader) error 
 	return nil
 }
 
-func Decrypt2(pk kyber.Point, sk kyber.Point,src io.Reader) (io.Reader, error) {
+func decrypt(pk kyber.Point, sk kyber.Point,src io.Reader) (io.Reader, error) {
 
 	hdr, payload, err := Parse(src)
 	if err != nil {
@@ -91,13 +91,13 @@ func Unwrap(pk kyber.Point, sk kyber.Point,stanzas []*Stanza) ([]byte, error) {
 		return nil, fmt.Errorf("check stanza type: wrong type")
 	}
 
-	ciphertext, err := BytesToCiphertext(stanza.Body)
+	ciphertext, err := bytesToCiphertext(stanza.Body)
 	if err != nil {
 		return nil, fmt.Errorf("parse cipher dek: %w", err)
 	}
 
 	
-	fileKey, err := TimeUnlock(pk, sk , ciphertext)
+	fileKey, err := timeUnlock(pk, sk , ciphertext)
 	if err != nil {
 		return nil, fmt.Errorf("decrypt dek: %w", err)
 	}
@@ -105,7 +105,7 @@ func Unwrap(pk kyber.Point, sk kyber.Point,stanzas []*Stanza) ([]byte, error) {
 	return fileKey, nil
 }
 
-func BytesToCiphertext(b []byte) (*Ciphertext, error) {
+func bytesToCiphertext(b []byte) (*Ciphertext, error) {
 	expLen := kyberPointLen + cipherVLen + cipherWLen
 	if len(b) != expLen {
 		return nil, fmt.Errorf("incorrect length: exp: %d got: %d", expLen, len(b))
@@ -134,7 +134,7 @@ func BytesToCiphertext(b []byte) (*Ciphertext, error) {
 	return &ct, nil
 }
 
-func TimeUnlock(publicKey kyber.Point,signature kyber.Point , ciphertext *Ciphertext) ([]byte, error) {
+func timeUnlock(publicKey kyber.Point,signature kyber.Point , ciphertext *Ciphertext) ([]byte, error) {
 
 
 	data, err := DecryptIBE(bls.NewBLS12381Suite(), signature, ciphertext)
