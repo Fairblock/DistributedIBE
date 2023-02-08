@@ -97,7 +97,8 @@ func BenchmarkDistributedIBEE(b *testing.B) {
 	for _, v := range participants {
 		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				DistributedIBE(6, 3, "300", plainData, message)
+				DistributedIBE(v.input, v.input -1, "300", plainData, message)
+			
 			}
 		})
 	}
