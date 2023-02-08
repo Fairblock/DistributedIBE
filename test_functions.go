@@ -1,20 +1,15 @@
-package tlock
+package distIBE
 
 import (
 	"bytes"
 	"crypto/rand"
-	//"io"
-	//"strings"
-
 	"fmt"
-
 	"github.com/drand/kyber"
 	bls "github.com/drand/kyber-bls12381"
-
+	"github.com/drand/kyber/pairing"
 	"math/big"
 	"reflect"
-
-	"github.com/drand/kyber/pairing"
+	enc "DistributedIBE/encryption"
 )
 
 func H3Tag() []byte {
@@ -90,7 +85,7 @@ func DistributedIBE(n int, t int, ID string, src bytes.Buffer, message string) (
 
 	// Encryption
 	var cipherData bytes.Buffer
-	_ = Encrypt(PK, []byte(ID), &cipherData, &src)
+	_ = enc.Encrypt(PK, []byte(ID), &cipherData, &src)
 
 	// Extracting the keys using shares
 	var sk []ExtractedKey
@@ -106,7 +101,7 @@ func DistributedIBE(n int, t int, ID string, src bytes.Buffer, message string) (
 		c, []byte(ID))
 	var plainData bytes.Buffer
 	// Decryption
-	_ = Decrypt(PK, SK, &plainData, &cipherData)
+	_ = enc.Decrypt(PK, SK, &plainData, &cipherData)
 
 	// Verify that the decrypted message matches the original message
 	if !reflect.DeepEqual(string(plainData.Bytes()[:]), message) {
@@ -156,7 +151,7 @@ func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message strin
 
 	// Encryption
 	var cipherData bytes.Buffer
-	_ = Encrypt(PK, []byte(ID), &cipherData, &src)
+	_ = enc.Encrypt(PK, []byte(ID), &cipherData, &src)
 
 	// Extracting the keys using shares
 	var sk []ExtractedKey
@@ -172,7 +167,7 @@ func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message strin
 		c, []byte(ID))
 	var plainData bytes.Buffer
 	// Decryption
-	err := Decrypt(PK, SK, &plainData, &cipherData)
+	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
@@ -225,7 +220,7 @@ func DistributedIBEFInvalidCommitment(n int, t int, ID string, src bytes.Buffer,
 
 	// Encryption
 	var cipherData bytes.Buffer
-	_ = Encrypt(PK, []byte(ID), &cipherData, &src)
+	_ = enc.Encrypt(PK, []byte(ID), &cipherData, &src)
 
 	// Extracting the keys using shares
 	var sk []ExtractedKey
@@ -235,7 +230,6 @@ func DistributedIBEFInvalidCommitment(n int, t int, ID string, src bytes.Buffer,
 		}
 	}
 	// chaning the first commitment to something else
-
 	c[0] = c[1]
 	// Aggregating keys to get the secret key for decryption
 	SK, invalids := AggregateSK(s,
@@ -246,7 +240,7 @@ func DistributedIBEFInvalidCommitment(n int, t int, ID string, src bytes.Buffer,
 	}
 	var plainData bytes.Buffer
 	// Decryption
-	err := Decrypt(PK, SK, &plainData, &cipherData)
+	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
@@ -300,7 +294,7 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 
 	// Encryption
 	var cipherData bytes.Buffer
-	_ = Encrypt(PK, []byte(ID), &cipherData, &src)
+	_ = enc.Encrypt(PK, []byte(ID), &cipherData, &src)
 
 	// Extracting the keys using shares
 	var sk []ExtractedKey
@@ -320,7 +314,7 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 	}
 	var plainData bytes.Buffer
 	// Decryption
-	err := Decrypt(PK, SK, &plainData, &cipherData)
+	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
@@ -331,4 +325,75 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 
 	return true, nil
 
+}
+
+// n keepers in total, threshold = t, (t+1) of them participated in decryption. The ciphertext is changed to become invalid.
+func DistributedIBEWrongCiphertext(n int, t int, ID string, src bytes.Buffer, message string) (bool, error) {
+
+	// Setup
+	s := bls.NewBLS12381Suite()
+	var secretVal []byte = []byte{187}
+	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	secret, _ := h3(s, secretVal, []byte("msg"))
+
+	signers := []int{}
+	for i := 0; i < n; i++ {
+		signers = append(signers, 0)
+	}
+	j := 0
+	for j < t+1 {
+
+		randomVal, _ := rand.Int(rand.Reader, big.NewInt(int64(n)))
+		if signers[randomVal.Int64()] == 0 {
+			signers[randomVal.Int64()] = 1
+			j++
+		}
+	}
+
+	// generating secret shares
+
+	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+
+	// Public Key
+	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+
+	// Generating commitments
+
+	var c []Commitment
+	for j := 0; j < n; j++ {
+		if signers[j] == 1 {
+			c = append(c, Commitment{s.G1().Point().Mul(shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
+		}
+	}
+
+	// Encryption
+	var cipherData bytes.Buffer
+	_ = enc.Encrypt(PK, []byte(ID), &cipherData, &src)
+
+	// Extracting the keys using shares
+	var sk []ExtractedKey
+	for k := 0; k < n; k++ {
+		if signers[k] == 1 {
+			sk = append(sk, Extract(s, shares[k].Value, uint32(k+1), []byte(ID)))
+		}
+	}
+
+	// Aggregating keys to get the secret key for decryption
+	SK, _ := AggregateSK(s,
+		sk,
+		c, []byte(ID))
+
+	var plainData bytes.Buffer
+
+	// Adding random string to ciphertext
+	cipherData.WriteString("hihihihihi")
+	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
+	if err != nil {
+		return false, err
+	}
+	// Verify that the decrypted message matches the original message
+	if !reflect.DeepEqual(string(plainData.Bytes()[:]), message) {
+		return false, fmt.Errorf("wrong decrypted message: %s VS %s", string(plainData.Bytes()[:]), message)
+	}
+	return true, nil
 }

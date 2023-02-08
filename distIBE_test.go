@@ -1,13 +1,12 @@
-package tlock
+package distIBE
 
 import (
-	"fmt"
 	"bytes"
-	"reflect"
-
+	"fmt"
 	"math/rand"
-
+	"reflect"
 	"testing"
+	
 )
 
 func TestDistributedIBE(t *testing.T) {
@@ -15,7 +14,8 @@ func TestDistributedIBE(t *testing.T) {
 	var plainData bytes.Buffer
 	plainData.WriteString(message)
 
-	res, err := DistributedIBE(6, 3, "300",plainData, message)
+	res, err := DistributedIBE(6, 3, "300", plainData, message)
+	
 	if res == false {
 		t.Errorf(err.Error())
 	}
@@ -28,7 +28,7 @@ func TestDistributedIBEFail(t *testing.T) {
 	var plainData bytes.Buffer
 	plainData.WriteString(message)
 
-	res, err := DistributedIBEFail(6, 3, "300",plainData, message)
+	res, err := DistributedIBEFail(6, 3, "300", plainData, message)
 
 	if res == true {
 		t.Errorf("Decryption worked with lower than threshold shares!")
@@ -44,13 +44,11 @@ func TestDistributedIBEFInvalidCommitment(t *testing.T) {
 	var plainData bytes.Buffer
 	plainData.WriteString(message)
 
-	_, err := DistributedIBEFInvalidCommitment(6, 3, "300",plainData, message)
-	
+	_, err := DistributedIBEFInvalidCommitment(6, 3, "300", plainData, message)
+
 	if err == nil {
 		t.Errorf("Wrong commitment accepted!")
 	}
-
-
 
 }
 
@@ -60,10 +58,23 @@ func TestDistributedIBEFInvalidShare(t *testing.T) {
 	var plainData bytes.Buffer
 	plainData.WriteString(message)
 
-	_, err := DistributedIBEFInvalidShare(6, 3, "300",plainData, message)
+	_, err := DistributedIBEFInvalidShare(6, 3, "300", plainData, message)
 
 	if err == nil {
 		t.Errorf("Wrong share accepted!")
+	}
+
+}
+
+func TestDistributedIBEWrongCiphertext(t *testing.T) {
+	message := "this is a long message with more than 32 bytes! this is a long message with more than 32 bytes!"
+	var plainData bytes.Buffer
+	plainData.WriteString(message)
+
+	_, err := DistributedIBEWrongCiphertext(6, 3, "300", plainData, message)
+	
+	if err.Error() != "write: failed to decrypt and authenticate payload chunk" {
+		t.Errorf("wrong ciphertext decrypted or some other part failed!")
 	}
 
 }
@@ -86,13 +97,12 @@ func BenchmarkDistributedIBEE(b *testing.B) {
 	for _, v := range participants {
 		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-			DistributedIBE(6, 3, "300",plainData, message)
+				DistributedIBE(6, 3, "300", plainData, message)
 			}
 		})
 	}
 
 }
-
 
 var messageSize = []struct {
 	input int
@@ -103,18 +113,16 @@ var messageSize = []struct {
 	{input: 128},
 	{input: 512},
 	{input: 2048},
-    {input: 8192},
+	{input: 8192},
 }
 
-
-
 func randomStringGenerator(n int) string {
-    var letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    byteString := make([]byte, n)
-    for i := range byteString {
-        byteString[i] = letters[rand.Intn(len(letters))]
-    }
-    return string(byteString)
+	var letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	byteString := make([]byte, n)
+	for i := range byteString {
+		byteString[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(byteString)
 }
 
 func BenchmarkDistributedIBEEMessageSize(b *testing.B) {
@@ -122,10 +130,10 @@ func BenchmarkDistributedIBEEMessageSize(b *testing.B) {
 	for _, v := range messageSize {
 		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
 			message := randomStringGenerator(v.input)
-				var plainData bytes.Buffer
-				plainData.WriteString(message)
+			var plainData bytes.Buffer
+			plainData.WriteString(message)
 			for i := 0; i < b.N; i++ {
-				DistributedIBE(6, 3, "300",plainData, message)
+				DistributedIBE(6, 3, "300", plainData, message)
 			}
 		})
 	}

@@ -1,5 +1,5 @@
 # DistributedIBE
-[To be improved]
+This library implements distributed IBE scheme based on Boneh-Franklin scheme. 
 ## Configuration
 The following commands install the required packages and dependancies:
 ```sh

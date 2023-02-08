@@ -1,13 +1,12 @@
-package tlock
+package distIBE
 
 import (
 	"crypto/rand"
 	"fmt"
-	"math/big"
-
 	"github.com/drand/kyber"
 	bls "github.com/drand/kyber-bls12381"
 	"github.com/drand/kyber/pairing"
+	"math/big"
 )
 
 type polynomial_coeff []kyber.Scalar

@@ -1,8 +1,7 @@
-package tlock
+package distIBE
 
 import (
 	"github.com/drand/kyber"
-
 	"github.com/drand/kyber/pairing"
 )
 

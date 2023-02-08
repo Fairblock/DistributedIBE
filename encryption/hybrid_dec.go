@@ -1,42 +1,30 @@
-package tlock
+package distIBE
 
 import (
-	//"bufio"
-	//"crypto/sha256"
-	//"errors"
 	"bufio"
+	"crypto/hmac"
 	"errors"
 	"fmt"
 	"io"
-
-	"crypto/hmac"
-	//"crypto/rand"
-
-	//"filippo.io/age"
-	//"github.com/drand/drand/chain"
-	//"github.com/drand/drand/common/scheme"
 	"filippo.io/age/armor"
 	"github.com/drand/kyber"
 	bls "github.com/drand/kyber-bls12381"
-	//bls "github.com/drand/kyber-bls12381"
-	// bls "github.com/drand/kyber-bls12381"
-	// "github.com/drand/kyber/encrypt/ibe"
 )
 
-func Decrypt(pk kyber.Point, sk kyber.Point,dst io.Writer, src io.Reader) error {
+func Decrypt(pk kyber.Point, sk kyber.Point, dst io.Writer, src io.Reader) error {
 	rr := bufio.NewReader(src)
-	
+
 	if start, _ := rr.Peek(len(armor.Header)); string(start) == armor.Header {
 		src = armor.NewReader(rr)
 	} else {
 		src = rr
 	}
-	
-	r, err := decrypt(pk,sk,src)
+
+	r, err := decrypt(pk, sk, src)
 	if err != nil {
 		return fmt.Errorf("age decrypt: %w", err)
 	}
-	
+
 	if _, err := io.Copy(dst, r); err != nil {
 		return fmt.Errorf("write: %w", err)
 	}
@@ -44,7 +32,7 @@ func Decrypt(pk kyber.Point, sk kyber.Point,dst io.Writer, src io.Reader) error 
 	return nil
 }
 
-func decrypt(pk kyber.Point, sk kyber.Point,src io.Reader) (io.Reader, error) {
+func decrypt(pk kyber.Point, sk kyber.Point, src io.Reader) (io.Reader, error) {
 
 	hdr, payload, err := Parse(src)
 	if err != nil {
@@ -57,10 +45,8 @@ func decrypt(pk kyber.Point, sk kyber.Point,src io.Reader) (io.Reader, error) {
 	}
 
 	var fileKey []byte
-	
-	fileKey, err = Unwrap(pk, sk , stanzas)
-	
 
+	fileKey, err = unwrap(pk, sk, stanzas)
 
 	if fileKey == nil {
 		return nil, fmt.Errorf("errNoMatch")
@@ -80,14 +66,14 @@ func decrypt(pk kyber.Point, sk kyber.Point,src io.Reader) (io.Reader, error) {
 	return NewReader(streamKey(fileKey, nonce), payload)
 }
 
-func Unwrap(pk kyber.Point, sk kyber.Point,stanzas []*Stanza) ([]byte, error) {
+func unwrap(pk kyber.Point, sk kyber.Point, stanzas []*Stanza) ([]byte, error) {
 	if len(stanzas) != 1 {
 		return nil, errors.New("check stanzas length: should be one")
 	}
 
 	stanza := stanzas[0]
 
-	if stanza.Type != "tlock" {
+	if stanza.Type != "distIBE" {
 		return nil, fmt.Errorf("check stanza type: wrong type")
 	}
 
@@ -96,8 +82,7 @@ func Unwrap(pk kyber.Point, sk kyber.Point,stanzas []*Stanza) ([]byte, error) {
 		return nil, fmt.Errorf("parse cipher dek: %w", err)
 	}
 
-	
-	fileKey, err := timeUnlock(pk, sk , ciphertext)
+	fileKey, err := unlock(pk, sk, ciphertext)
 	if err != nil {
 		return nil, fmt.Errorf("decrypt dek: %w", err)
 	}
@@ -134,8 +119,7 @@ func bytesToCiphertext(b []byte) (*Ciphertext, error) {
 	return &ct, nil
 }
 
-func timeUnlock(publicKey kyber.Point,signature kyber.Point , ciphertext *Ciphertext) ([]byte, error) {
-
+func unlock(publicKey kyber.Point, signature kyber.Point, ciphertext *Ciphertext) ([]byte, error) {
 
 	data, err := DecryptIBE(bls.NewBLS12381Suite(), signature, ciphertext)
 	if err != nil {

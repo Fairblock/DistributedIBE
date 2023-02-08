@@ -1,9 +1,9 @@
-package tlock
+package distIBE
 
 import (
+	"reflect"
 	"github.com/drand/kyber"
 	"github.com/drand/kyber/pairing"
-	"reflect"
 )
 
 type Commitment struct {
@@ -12,7 +12,6 @@ type Commitment struct {
 }
 
 func verifyShare(s pairing.Suite, c Commitment, share ExtractedKey, qid kyber.Point) bool {
-
 	//e(s1 * P, H(ID))
 	a := s.Pair(c.sP, qid)
 	//e(P, s1 * H(ID))

@@ -1,4 +1,4 @@
-package tlock
+package distIBE
 
 import (
 	"fmt"

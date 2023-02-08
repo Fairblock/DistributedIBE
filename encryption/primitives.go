@@ -4,15 +4,13 @@
 // license that can be found in the LICENSE file or at
 // https://developers.google.com/open-source/licenses/bsd
 
-package tlock
+package distIBE
 
 import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"errors"
 	"io"
-
-	
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/hkdf"
 )

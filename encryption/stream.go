@@ -5,15 +5,14 @@
 // https://developers.google.com/open-source/licenses/bsd
 
 // Package stream implements a variant of the STREAM chunked encryption scheme.
-package tlock
+package distIBE
 
 import (
 	"crypto/cipher"
 	"errors"
-	"io"
-
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/poly1305"
+	"io"
 )
 
 const ChunkSize = 64 * 1024
