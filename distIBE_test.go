@@ -83,11 +83,12 @@ var participants = []struct {
 	input int
 }{
 
-	{input: 5},
-	{input: 10},
-	{input: 20},
-	{input: 50},
-	{input: 100},
+	{input: 4},
+	{input: 8},
+	{input: 16},
+	{input: 32},
+	{input: 64},
+	{input: 128},
 }
 
 func BenchmarkDistributedIBEE(b *testing.B) {
@@ -134,7 +135,7 @@ func BenchmarkDistributedIBEEMessageSize(b *testing.B) {
 			var plainData bytes.Buffer
 			plainData.WriteString(message)
 			for i := 0; i < b.N; i++ {
-				DistributedIBE(6, 3, "300", plainData, message)
+				DistributedIBE(4, 3, "300", plainData, message)
 			}
 		})
 	}
