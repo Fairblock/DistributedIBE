@@ -8,7 +8,7 @@ import (
 	bls "github.com/drand/kyber-bls12381"
 )
 
-const fileKeySize = 16
+const fileKeySize = 32
 const streamNonceSize = 16
 
 func Encrypt(pk kyber.Point, id []byte, dst io.Writer, src io.Reader) (err error) {
@@ -101,8 +101,8 @@ func lock(publicKey kyber.Point, id []byte, data []byte) (*Ciphertext, error) {
 
 const (
 	kyberPointLen = 48
-	cipherVLen    = 16
-	cipherWLen    = 16
+	cipherVLen    = 32
+	cipherWLen    = 32
 )
 
 // CiphertextToBytes converts a ciphertext value to a set of bytes.
