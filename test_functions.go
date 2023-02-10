@@ -1,6 +1,7 @@
 package distIBE
 
 import (
+	enc "DistributedIBE/encryption"
 	"bytes"
 	"crypto/rand"
 	"fmt"
@@ -9,14 +10,13 @@ import (
 	"github.com/drand/kyber/pairing"
 	"math/big"
 	"reflect"
-	enc "DistributedIBE/encryption"
 )
 
 func H3Tag() []byte {
 	return []byte("IBE-H3")
 }
 
-func h3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
+func H3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
 	h3 := s.Hash()
 
 	if _, err := h3.Write(H3Tag()); err != nil {
@@ -36,7 +36,7 @@ func h3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
 	return hashable.Hash(s, h3Reader)
 }
 
-func bigFromHex(hex string) *big.Int {
+func BigFromHex(hex string) *big.Int {
 	if len(hex) > 1 && hex[:2] == "0x" {
 		hex = hex[2:]
 	}
@@ -50,8 +50,8 @@ func DistributedIBE(n int, t int, ID string, src bytes.Buffer, message string) (
 	// Setup
 	s := bls.NewBLS12381Suite()
 	var secretVal []byte = []byte{187}
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
+	var qBig = BigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	secret, _ := H3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -110,14 +110,14 @@ func DistributedIBE(n int, t int, ID string, src bytes.Buffer, message string) (
 	return true, nil
 }
 
-//n keepers in total, threshold = t, (t-1) of them participated in decryption
+// n keepers in total, threshold = t, (t-1) of them participated in decryption
 func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message string) (bool, error) {
 
 	// Setup
 	s := bls.NewBLS12381Suite()
 	var secretVal []byte = []byte{187}
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
+	var qBig = BigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	secret, _ := H3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -185,8 +185,8 @@ func DistributedIBEFInvalidCommitment(n int, t int, ID string, src bytes.Buffer,
 	// Setup
 	s := bls.NewBLS12381Suite()
 	var secretVal []byte = []byte{187}
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
+	var qBig = BigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	secret, _ := H3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -259,8 +259,8 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 	// Setup
 	s := bls.NewBLS12381Suite()
 	var secretVal []byte = []byte{187}
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
+	var qBig = BigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	secret, _ := H3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -304,7 +304,7 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 		}
 	}
 	// chaning the first extracted key to something else (previous value * 2 in this case)
-	sk[0].sk = sk[0].sk.Add(sk[0].sk, sk[0].sk)
+	sk[0].Sk = sk[0].Sk.Add(sk[0].Sk, sk[0].Sk)
 	// Aggregating keys to get the secret key for decryption
 	SK, invalids := AggregateSK(s,
 		sk,
@@ -333,8 +333,8 @@ func DistributedIBEWrongCiphertext(n int, t int, ID string, src bytes.Buffer, me
 	// Setup
 	s := bls.NewBLS12381Suite()
 	var secretVal []byte = []byte{187}
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
+	var qBig = BigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	secret, _ := H3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
