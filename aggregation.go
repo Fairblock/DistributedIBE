@@ -19,17 +19,17 @@ func AggregateSK(s pairing.Suite, receivedShares []ExtractedKey, commitments []C
 		}
 		Qid := hG2.Hash(id)
 		if verifyShare(s, commitment, receivedShare, Qid) {
-			valid = append(valid, receivedShare.index)
+			valid = append(valid, receivedShare.Index)
 			validShare = append(validShare, receivedShare)
 		} else {
-			invalid = append(invalid, commitment.index)
+			invalid = append(invalid, commitment.Index)
 		}
 	}
 
 	for _, r := range validShare {
 
 		processedShare := processSK(s, r, valid)
-		SkShares = append(SkShares, processedShare.sk)
+		SkShares = append(SkShares, processedShare.Sk)
 	}
 
 	SK := aggregate(SkShares...)
@@ -38,9 +38,9 @@ func AggregateSK(s pairing.Suite, receivedShares []ExtractedKey, commitments []C
 
 func processSK(suite pairing.Suite, share ExtractedKey, S []uint32) ExtractedKey {
 
-	lagrangeCoef := LagrangeCoefficient(suite, share.index, S)
-	idenityKey := share.sk.Mul(lagrangeCoef, share.sk)
-	return ExtractedKey{idenityKey, share.index}
+	lagrangeCoef := LagrangeCoefficient(suite, share.Index, S)
+	idenityKey := share.Sk.Mul(lagrangeCoef, share.Sk)
+	return ExtractedKey{idenityKey, share.Index}
 }
 
 func aggregate(keys ...kyber.Point) kyber.Point {

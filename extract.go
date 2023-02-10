@@ -7,8 +7,8 @@ import (
 )
 
 type ExtractedKey struct {
-	sk    kyber.Point
-	index uint32
+	Sk    kyber.Point
+	Index uint32
 }
 
 func Extract(s pairing.Suite, share kyber.Scalar, index uint32, id []byte) ExtractedKey {
