@@ -18,7 +18,7 @@ func AggregateSK(s pairing.Suite, receivedShares []ExtractedKey, commitments []C
 			panic("point needs to implement `kyber.HashablePoint`")
 		}
 		Qid := hG2.Hash(id)
-		if verifyShare(s, commitment, receivedShare, Qid) {
+		if VerifyShare(s, commitment, receivedShare, Qid) {
 			valid = append(valid, receivedShare.Index)
 			validShare = append(validShare, receivedShare)
 		} else {
