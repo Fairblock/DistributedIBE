@@ -10,9 +10,11 @@ package distIBE
 import (
 	"crypto/cipher"
 	"errors"
+
+	"io"
+
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/poly1305"
-	"io"
 )
 
 const ChunkSize = 64 * 1024
@@ -201,11 +203,12 @@ func (w *Writer) flushChunk(last bool) error {
 	if !last && len(w.unwritten) != ChunkSize {
 		panic("stream: internal error: flush called with partial chunk")
 	}
-
+	
 	if last {
 		setLastChunkFlag(&w.nonce)
 	}
 	buf := w.a.Seal(w.buf[:0], w.nonce[:], w.unwritten, nil)
+	
 	_, err := w.dst.Write(buf)
 	w.unwritten = w.buf[:0]
 	incNonce(&w.nonce)

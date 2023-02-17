@@ -1,15 +1,17 @@
 package distIBE
 
 import (
+	enc "DistributedIBE/encryption"
 	"bytes"
 	"crypto/rand"
 	"fmt"
+	"math/big"
+	"reflect"
+
+	//"github.com/aws/aws-sdk-go/service/panorama"
 	"github.com/drand/kyber"
 	bls "github.com/drand/kyber-bls12381"
 	"github.com/drand/kyber/pairing"
-	"math/big"
-	"reflect"
-	enc "DistributedIBE/encryption"
 )
 
 func H3Tag() []byte {
@@ -49,7 +51,13 @@ func DistributedIBE(n int, t int, ID string, src bytes.Buffer, message string) (
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	var secretVal []byte = []byte{187}
+	buf := make([]byte, 128)
+
+	_, err := rand.Read(buf)
+	if err != nil {
+		return false, err
+	}
+	var secretVal []byte = buf
 	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
 	secret, _ := h3(s, secretVal, []byte("msg"))
 
@@ -115,7 +123,13 @@ func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message strin
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	var secretVal []byte = []byte{187}
+	buf := make([]byte, 128)
+
+	_, err := rand.Read(buf)
+	if err != nil {
+		return false, err
+	}
+	var secretVal []byte = buf
 	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
 	secret, _ := h3(s, secretVal, []byte("msg"))
 
@@ -167,7 +181,7 @@ func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message strin
 		c, []byte(ID))
 	var plainData bytes.Buffer
 	// Decryption
-	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
+	err = enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
@@ -184,7 +198,13 @@ func DistributedIBEFInvalidCommitment(n int, t int, ID string, src bytes.Buffer,
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	var secretVal []byte = []byte{187}
+	buf := make([]byte, 128)
+
+	_, err := rand.Read(buf)
+	if err != nil {
+		return false, err
+	}
+	var secretVal []byte = buf
 	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
 	secret, _ := h3(s, secretVal, []byte("msg"))
 
@@ -240,7 +260,7 @@ func DistributedIBEFInvalidCommitment(n int, t int, ID string, src bytes.Buffer,
 	}
 	var plainData bytes.Buffer
 	// Decryption
-	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
+	err = enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
@@ -258,7 +278,13 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	var secretVal []byte = []byte{187}
+	buf := make([]byte, 128)
+
+	_, err := rand.Read(buf)
+	if err != nil {
+		return false, err
+	}
+	var secretVal []byte = buf
 	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
 	secret, _ := h3(s, secretVal, []byte("msg"))
 
@@ -314,7 +340,7 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 	}
 	var plainData bytes.Buffer
 	// Decryption
-	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
+	err = enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
@@ -332,7 +358,13 @@ func DistributedIBEWrongCiphertext(n int, t int, ID string, src bytes.Buffer, me
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	var secretVal []byte = []byte{187}
+	buf := make([]byte, 128)
+
+	_, err := rand.Read(buf)
+	if err != nil {
+		return false, err
+	}
+	var secretVal []byte = buf
 	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
 	secret, _ := h3(s, secretVal, []byte("msg"))
 
@@ -387,7 +419,7 @@ func DistributedIBEWrongCiphertext(n int, t int, ID string, src bytes.Buffer, me
 
 	// Adding random string to ciphertext
 	cipherData.WriteString("hihihihihi")
-	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
+	err = enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}

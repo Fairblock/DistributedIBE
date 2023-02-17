@@ -10,7 +10,7 @@ import (
 )
 
 func TestDistributedIBE(t *testing.T) {
-	message := "this is a long message with more than 32 bytes! this is a long message with more than 32 bytes!"
+	message := "this is a long message with more than 32 bytes! this is a long message with more than 32 bytes!long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with "
 	var plainData bytes.Buffer
 	plainData.WriteString(message)
 
