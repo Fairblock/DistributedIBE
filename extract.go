@@ -2,13 +2,14 @@ package distIBE
 
 import (
 	"fmt"
+
 	"github.com/drand/kyber"
 	"github.com/drand/kyber/pairing"
 )
 
 type ExtractedKey struct {
-	sk    kyber.Point
-	index uint32
+	SK    kyber.Point
+	Index uint32
 }
 
 func Extract(s pairing.Suite, share kyber.Scalar, index uint32, id []byte) ExtractedKey {

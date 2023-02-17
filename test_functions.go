@@ -330,7 +330,7 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 		}
 	}
 	// chaning the first extracted key to something else (previous value * 2 in this case)
-	sk[0].sk = sk[0].sk.Add(sk[0].sk, sk[0].sk)
+	sk[0].SK = sk[0].SK.Add(sk[0].SK, sk[0].SK)
 	// Aggregating keys to get the secret key for decryption
 	SK, invalids := AggregateSK(s,
 		sk,
