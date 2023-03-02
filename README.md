@@ -32,6 +32,24 @@ Since the message is being encrypted first and the key is used for the IBE, we e
 |    2048                |             10927359 ns/op  |
 |    8192                |             11029081 ns/op  |
 
+We also broke down the steps to measure the overhead of each stage:
+|  Function |  Number of Validators  |           Execution Time    |
+|--------| -------------         | ------------- |
+|     Key extraction and aggregation    |  128                   |      213753903 ns/op       |
+
+|  Function |  Number of messages  |           Execution Time    |
+|--------| -------------         | ------------- |
+|     Encryption   |  1                   |      1574796 ns/op       |
+|         |  4                   |      6179149 ns/op       |
+|        |  16                   |      24764695 ns/op       |
+|        |  64                   |      100275889 ns/op       |
+|         |  256                   |      399253311 ns/op       |
+|     Decryption    |  8                   |      7205781 ns/op       |
+|        |  32                   |      30806709 ns/op       |
+|     |  128                   |      117187771 ns/op       |
+|        |  512                   |      457499724 ns/op       |
+|        |  1024                   |      930084488 ns/op       |
+
 ## Configuration
 The following commands install the required packages and dependancies:
 ```sh

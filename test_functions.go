@@ -86,6 +86,7 @@ func DistributedIBE(n int, t int, ID string, src bytes.Buffer, message string) (
 
 	var c []Commitment
 	for j := 0; j < n; j++ {
+		fmt.Println(shares[j].Value)
 		if signers[j] == 1 {
 			c = append(c, Commitment{s.G1().Point().Mul(shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
 		}
@@ -428,4 +429,132 @@ func DistributedIBEWrongCiphertext(n int, t int, ID string, src bytes.Buffer, me
 		return false, fmt.Errorf("wrong decrypted message: %s VS %s", string(plainData.Bytes()[:]), message)
 	}
 	return true, nil
+}
+
+func Config(n int, t int, ID string) (kyber.Point, kyber.Point, error) {
+
+	// Setup
+	s := bls.NewBLS12381Suite()
+	buf := make([]byte, 128)
+
+	_, err := rand.Read(buf)
+	if err != nil {
+		return nil, nil, err
+	}
+	var secretVal []byte = buf
+	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	secret, _ := h3(s, secretVal, []byte("msg"))
+
+	signers := []int{}
+	for i := 0; i < n; i++ {
+		signers = append(signers, 0)
+	}
+	j := 0
+	for j < t+1 {
+
+		randomVal, _ := rand.Int(rand.Reader, big.NewInt(int64(n)))
+		if signers[randomVal.Int64()] == 0 {
+			signers[randomVal.Int64()] = 1
+			j++
+		}
+	}
+
+	// generating secret shares
+
+	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+
+	// Public Key
+	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+
+	// Generating commitments
+
+	var c []Commitment
+	for j := 0; j < n; j++ {
+
+		if signers[j] == 1 {
+			c = append(c, Commitment{s.G1().Point().Mul(shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
+		}
+	}
+
+	// Extracting the keys using shares
+	var sk []ExtractedKey
+	for k := 0; k < n; k++ {
+		if signers[k] == 1 {
+			sk = append(sk, Extract(s, shares[k].Value, uint32(k+1), []byte(ID)))
+		}
+	}
+
+	// Aggregating keys to get the secret key for decryption
+	SK, _ := AggregateSK(s,
+		sk,
+		c, []byte(ID))
+	return PK, SK, nil
+}
+
+func Encrypt(PK kyber.Point, ID string, src bytes.Buffer, message string) (bytes.Buffer, error) {
+	// Encryption
+	var cipherData bytes.Buffer
+	err := enc.Encrypt(PK, []byte(ID), &cipherData, &src)
+	if err != nil {
+		return bytes.Buffer{}, err
+	}
+	return cipherData, nil
+
+}
+
+func Decrypt(PK kyber.Point, SK kyber.Point, cipherData bytes.Buffer) (bool, error) {
+	var plainData bytes.Buffer
+	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func Shares(n int, t int, ID string) ([]Commitment, []Share, []int, error) {
+
+	// Setup
+	s := bls.NewBLS12381Suite()
+	buf := make([]byte, 128)
+
+	_, err := rand.Read(buf)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	var secretVal []byte = buf
+	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	secret, _ := h3(s, secretVal, []byte("msg"))
+
+	signers := []int{}
+	for i := 0; i < n; i++ {
+		signers = append(signers, 0)
+	}
+	j := 0
+	for j < t {
+
+		randomVal, _ := rand.Int(rand.Reader, big.NewInt(int64(n)))
+		if signers[randomVal.Int64()] == 0 {
+			signers[randomVal.Int64()] = 1
+			j++
+		}
+	}
+
+	// generating secret shares
+
+	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+
+	// Public Key
+	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+	_ = PK
+	// Generating commitments
+
+	var c []Commitment
+	for j := 0; j < n; j++ {
+
+		if signers[j] == 1 {
+			c = append(c, Commitment{s.G1().Point().Mul(shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
+		}
+	}
+
+	return c, shares, signers, nil
 }
