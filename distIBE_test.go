@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"reflect"
+	"sync"
 	"testing"
 
 	bls "github.com/drand/kyber-bls12381"
@@ -16,7 +17,7 @@ func TestDistributedIBE(t *testing.T) {
 	plainData.WriteString(message)
 
 	res, err := DistributedIBE(4, 1, "300", plainData, message)
-	t.Error("hi")
+
 	if res == false {
 		t.Errorf(err.Error())
 	}
@@ -147,11 +148,11 @@ var messageNum = []struct {
 	input int
 }{
 
-	{input: 8},
-	{input: 32},
-	{input: 128},
-	{input: 512},
-	{input: 1024},
+	{input: 1},
+	{input: 4},
+	{input: 16},
+	{input: 64},
+	{input: 100},
 }
 
 func BenchmarkDecryption(b *testing.B) {
@@ -169,12 +170,43 @@ func BenchmarkDecryption(b *testing.B) {
 	for _, v := range messageNum {
 		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
+
 				for j := 0; j < v.input; j++ {
 					res, err := Decrypt(PK, SK, cipher)
 					if !res {
 						panic(err.Error())
 					}
 				}
+
+			}
+		})
+	}
+
+}
+
+func BenchmarkDecryptionParallel(b *testing.B) {
+	message := "this is a long message with more than 32 bytes!"
+	var plainData bytes.Buffer
+	plainData.WriteString(message)
+	PK, SK, err := Config(100, 70, "3000")
+	if err != nil {
+		panic(err.Error())
+	}
+	cipher, err := Encrypt(PK, "3000", plainData, message)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	var wg sync.WaitGroup
+	for _, v := range messageNum {
+		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				wg.Add(v.input)
+				for j := 0; j < v.input; j++ {
+
+					go DecryptParallel(PK, SK, cipher, &wg)
+				}
+				wg.Wait()
 
 			}
 		})

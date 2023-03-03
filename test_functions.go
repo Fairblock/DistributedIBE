@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"sync"
 
 	//"github.com/aws/aws-sdk-go/service/panorama"
 	"github.com/drand/kyber"
@@ -503,6 +504,16 @@ func Encrypt(PK kyber.Point, ID string, src bytes.Buffer, message string) (bytes
 }
 
 func Decrypt(PK kyber.Point, SK kyber.Point, cipherData bytes.Buffer) (bool, error) {
+	var plainData bytes.Buffer
+	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func DecryptParallel(PK kyber.Point, SK kyber.Point, cipherData bytes.Buffer, wg *sync.WaitGroup) (bool, error) {
+	defer wg.Done()
 	var plainData bytes.Buffer
 	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
