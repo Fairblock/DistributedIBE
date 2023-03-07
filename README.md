@@ -50,6 +50,17 @@ We also broke down the steps to measure the overhead of each stage:
 |        |  512                   |      457499724 ns/op       |
 |        |  1024                   |      930084488 ns/op       |
 
+In order to improve the efficiency in case of decrypting large number of messages, we can perform the decryption in parallel. Below shows the execution times for the parallel decryption:
+|  Function |  Number of messages  |           Execution Time    |
+|--------| -------------         | ------------- |
+|     Decryption    |  8                   |      2404587 ns/op       |
+|        |  32                   |      6470264 ns/op       |
+|     |  128                   |      23466097 ns/op       |
+|        |  512                   |      80075636 ns/op       |
+|        |  1024                   |      153275583 ns/op       |
+
+All benchmarks have been ran on a laptop with 12th Gen Intel(R) Core(TM) i7-1270P cpu.
+
 ## Configuration
 The following commands install the required packages and dependancies:
 ```sh

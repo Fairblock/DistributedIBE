@@ -148,11 +148,12 @@ var messageNum = []struct {
 	input int
 }{
 
-	{input: 1},
-	{input: 4},
-	{input: 16},
-	{input: 64},
-	{input: 100},
+	{input: 8},
+	{input: 32},
+	{input: 128},
+	{input: 512},
+	{input: 1024},
+
 }
 
 func BenchmarkDecryption(b *testing.B) {
@@ -205,6 +206,7 @@ func BenchmarkDecryptionParallel(b *testing.B) {
 				for j := 0; j < v.input; j++ {
 
 					go DecryptParallel(PK, SK, cipher, &wg)
+
 				}
 				wg.Wait()
 
