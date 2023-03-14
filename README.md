@@ -60,7 +60,22 @@ In order to improve the efficiency in case of decrypting large number of message
 |        |  1024                   |      153275583 ns/op       |
 
 All benchmarks have been ran on a laptop with 12th Gen Intel(R) Core(TM) i7-1270P cpu.
-
+### KZG Commitments vs VSS
+Below, we compare the verification time for KZG commitments vs VSS.
+|  Function |  Number of Validators  |           Execution Time    |
+|--------| -------------         | ------------- |
+|    KZG Share Verification    |  4                   |      4744239 ns/op       |
+|        |  8                   |      9348084 ns/op       |
+|     |  16                   |      18922709 ns/op       |
+|        |  32                   |      38153229 ns/op       |
+|        |  64                   |      77705447 ns/op       |
+|        |  128                   |      154309057 ns/op       |
+|    VSS Share Verification    |  4                   |      383691 ns/op       |
+|        |  8                   |      1521771 ns/op       |
+|     |  16                   |      7168398 ns/op       |
+|        |  32                   |      38691278 ns/op       |
+|        |  64                   |      219296811 ns/op       |
+|        |  128                   |      1039926768 ns/op       |
 ## Configuration
 The following commands install the required packages and dependancies:
 ```sh

@@ -10,6 +10,33 @@ import (
 
 	bls "github.com/drand/kyber-bls12381"
 )
+func TestKZGCommitmentsFail(t *testing.T) {
+
+	err := KZGTestFail(5, 3)
+
+	if err.Error() != "can't verify opening proof" {
+		t.Errorf(err.Error())
+	}
+
+}
+func TestKZGCommitments(t *testing.T) {
+
+	err := KZGTest(4, 3)
+	
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+}
+func TestVSS(t *testing.T) {
+
+	err := VSSTest(4, 2)
+
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+}
 
 func TestDistributedIBE(t *testing.T) {
 	message := "this is a long message with more than 32 bytes! this is a long message with more than 32 bytes!long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with long message with more than 32 bytes! this is a long message with "
@@ -108,6 +135,50 @@ func BenchmarkDistributedIBEE(b *testing.B) {
 
 }
 
+func BenchmarkKZG(b *testing.B) {
+
+	for _, v := range participants {
+		 _, commitment, proof, srs, err := GenerateSharesKZG(uint32(v.input), uint32(v.input)-1)
+				if err != nil {
+					panic(err.Error())
+				}
+		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				
+				for i := 0; uint32(i) < uint32(v.input); i++ {
+					err = Verify(commitment,proof[i],proof[i].Index,srs)
+					if err != nil{
+						panic(err.Error())
+					}
+				}
+
+			}
+		})
+	}
+
+}
+
+func BenchmarkVSS(b *testing.B) {
+
+	for _, v := range participants {
+		shares,_,commitments,err:= GenerateShares(uint32(v.input), uint32(v.input)-1)
+		if err != nil{
+			panic(err.Error())
+		}
+		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				for i := 0; uint32(i) < uint32(v.input); i++ {
+					res := VerifyShare(shares[i],commitments)
+					if !res{
+						panic("wrong share")
+					}
+				}
+			}
+		})
+	}
+
+}
+
 var messageSize = []struct {
 	input int
 }{
@@ -153,7 +224,6 @@ var messageNum = []struct {
 	{input: 128},
 	{input: 512},
 	{input: 1024},
-
 }
 
 func BenchmarkDecryption(b *testing.B) {

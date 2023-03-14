@@ -52,15 +52,15 @@ func DistributedIBE(n int, t int, ID string, src bytes.Buffer, message string) (
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	buf := make([]byte, 128)
+	// buf := make([]byte, 128)
 
-	_, err := rand.Read(buf)
-	if err != nil {
-		return false, err
-	}
-	var secretVal []byte = buf
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
+	// _, err := rand.Read(buf)
+	// if err != nil {
+	// 	return false, err
+	// }
+	// var secretVal []byte = buf
+	// var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	// secret, _ := h3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -78,10 +78,10 @@ func DistributedIBE(n int, t int, ID string, src bytes.Buffer, message string) (
 
 	// generating secret shares
 
-	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+	shares,PK,_, _ := GenerateShares(uint32(n), uint32(t))
 
 	// Public Key
-	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+	
 
 	// Generating commitments
 
@@ -125,15 +125,15 @@ func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message strin
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	buf := make([]byte, 128)
+	// buf := make([]byte, 128)
 
-	_, err := rand.Read(buf)
-	if err != nil {
-		return false, err
-	}
-	var secretVal []byte = buf
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
+	// _, err := rand.Read(buf)
+	// if err != nil {
+	// 	return false, err
+	// }
+	// var secretVal []byte = buf
+	// var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	// secret, _ := h3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -151,10 +151,10 @@ func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message strin
 
 	// generating secret shares
 
-	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+	shares,PK,_, _ := GenerateShares(uint32(n), uint32(t))
 
 	// Public Key
-	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+	
 
 	// Generating commitments
 
@@ -183,7 +183,7 @@ func DistributedIBEFail(n int, t int, ID string, src bytes.Buffer, message strin
 		c, []byte(ID))
 	var plainData bytes.Buffer
 	// Decryption
-	err = enc.Decrypt(PK, SK, &plainData, &cipherData)
+	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
@@ -200,15 +200,15 @@ func DistributedIBEFInvalidCommitment(n int, t int, ID string, src bytes.Buffer,
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	buf := make([]byte, 128)
+	// buf := make([]byte, 128)
 
-	_, err := rand.Read(buf)
-	if err != nil {
-		return false, err
-	}
-	var secretVal []byte = buf
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
+	// _, err := rand.Read(buf)
+	// if err != nil {
+	// 	return false, err
+	// }
+	// var secretVal []byte = buf
+	// var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	// secret, _ := h3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -226,10 +226,10 @@ func DistributedIBEFInvalidCommitment(n int, t int, ID string, src bytes.Buffer,
 
 	// generating secret shares
 
-	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+	shares,PK,_, _ := GenerateShares(uint32(n), uint32(t))
 
 	// Public Key
-	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+	
 
 	// Generating commitments
 
@@ -262,7 +262,7 @@ func DistributedIBEFInvalidCommitment(n int, t int, ID string, src bytes.Buffer,
 	}
 	var plainData bytes.Buffer
 	// Decryption
-	err = enc.Decrypt(PK, SK, &plainData, &cipherData)
+	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
@@ -280,15 +280,15 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	buf := make([]byte, 128)
+	// buf := make([]byte, 128)
 
-	_, err := rand.Read(buf)
-	if err != nil {
-		return false, err
-	}
-	var secretVal []byte = buf
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
+	// _, err := rand.Read(buf)
+	// if err != nil {
+	// 	return false, err
+	// }
+	// var secretVal []byte = buf
+	// var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	// secret, _ := h3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -306,10 +306,10 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 
 	// generating secret shares
 
-	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+	shares,PK,_, _ := GenerateShares(uint32(n), uint32(t))
 
 	// Public Key
-	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+	
 
 	// Generating commitments
 
@@ -342,7 +342,7 @@ func DistributedIBEFInvalidShare(n int, t int, ID string, src bytes.Buffer, mess
 	}
 	var plainData bytes.Buffer
 	// Decryption
-	err = enc.Decrypt(PK, SK, &plainData, &cipherData)
+	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
@@ -360,15 +360,15 @@ func DistributedIBEWrongCiphertext(n int, t int, ID string, src bytes.Buffer, me
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	buf := make([]byte, 128)
+	// buf := make([]byte, 128)
 
-	_, err := rand.Read(buf)
-	if err != nil {
-		return false, err
-	}
-	var secretVal []byte = buf
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
+	// _, err := rand.Read(buf)
+	// if err != nil {
+	// 	return false, err
+	// }
+	// var secretVal []byte = buf
+	// var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+	// secret, _ := h3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -386,10 +386,10 @@ func DistributedIBEWrongCiphertext(n int, t int, ID string, src bytes.Buffer, me
 
 	// generating secret shares
 
-	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+	shares,PK,_, _ := GenerateShares(uint32(n), uint32(t))
 
 	// Public Key
-	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+	
 
 	// Generating commitments
 
@@ -421,7 +421,7 @@ func DistributedIBEWrongCiphertext(n int, t int, ID string, src bytes.Buffer, me
 
 	// Adding random string to ciphertext
 	cipherData.WriteString("hihihihihi")
-	err = enc.Decrypt(PK, SK, &plainData, &cipherData)
+	err := enc.Decrypt(PK, SK, &plainData, &cipherData)
 	if err != nil {
 		return false, err
 	}
@@ -436,15 +436,7 @@ func Config(n int, t int, ID string) (kyber.Point, kyber.Point, error) {
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	buf := make([]byte, 128)
 
-	_, err := rand.Read(buf)
-	if err != nil {
-		return nil, nil, err
-	}
-	var secretVal []byte = buf
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -462,10 +454,10 @@ func Config(n int, t int, ID string) (kyber.Point, kyber.Point, error) {
 
 	// generating secret shares
 
-	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+	shares,PK,_, _ := GenerateShares(uint32(n), uint32(t))
 
 	// Public Key
-	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+	
 
 	// Generating commitments
 
@@ -526,15 +518,6 @@ func Shares(n int, t int, ID string) ([]Commitment, []Share, []int, error) {
 
 	// Setup
 	s := bls.NewBLS12381Suite()
-	buf := make([]byte, 128)
-
-	_, err := rand.Read(buf)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	var secretVal []byte = buf
-	var qBig = bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	secret, _ := h3(s, secretVal, []byte("msg"))
 
 	signers := []int{}
 	for i := 0; i < n; i++ {
@@ -552,10 +535,10 @@ func Shares(n int, t int, ID string) ([]Commitment, []Share, []int, error) {
 
 	// generating secret shares
 
-	shares, _ := GenerateShares(uint32(n), uint32(t), secret, qBig)
+	shares,PK,_, _ := GenerateShares(uint32(n), uint32(t))
 
 	// Public Key
-	PK := s.G1().Point().Mul(secret, s.G1().Point().Base())
+	
 	_ = PK
 	// Generating commitments
 
@@ -568,4 +551,56 @@ func Shares(n int, t int, ID string) ([]Commitment, []Share, []int, error) {
 	}
 
 	return c, shares, signers, nil
+}
+
+func KZGTest(n uint32, t uint32) error{
+
+	_,commitment, proof,srs,err:= GenerateSharesKZG(n,t)
+	if err != nil{
+		return err
+	}
+	
+	for i := 0; uint32(i) < n; i++ {
+	
+		err = Verify(commitment,proof[i],proof[i].Index,srs)
+		if err != nil{
+			return err
+		}
+	}
+	return nil
+}
+
+func KZGTestFail(n uint32, t uint32) error{
+	
+	_,commitment, proof,srs,err:= GenerateSharesKZG(n,t)
+	if err != nil{
+		return err
+	}
+	// Changing a proof to a wrong value
+	 proof[1].H = proof[1].H.Add(proof[1].H,proof[1].H)
+
+	for i := 0; uint32(i) < n; i++ {
+	
+		err = Verify(commitment,proof[i],proof[i].Index,srs)
+		if err != nil{
+			return err
+		}
+	}
+	return nil
+}
+
+
+func VSSTest(n uint32, t uint32) error{
+
+	shares,_,commitments,err:= GenerateShares(n,t)
+	if err != nil{
+		return err
+	}
+	for i := 0; uint32(i) < n; i++ {
+		res := VerifyShare(shares[i],commitments)
+		if !res{
+			return fmt.Errorf("wrong share")
+		}
+	}
+	return nil
 }
