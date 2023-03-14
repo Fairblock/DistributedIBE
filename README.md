@@ -76,6 +76,20 @@ Below, we compare the verification time for KZG commitments vs VSS.
 |        |  32                   |      38691278 ns/op       |
 |        |  64                   |      219296811 ns/op       |
 |        |  128                   |      1039926768 ns/op       |
+|    KZG Share Generation    |  4                   |      641104 ns/op       |
+|        |  8                   |      2612382 ns/op       |
+|     |  16                   |      11231675 ns/op       |
+|        |  32                   |      52606951 ns/op       |
+|        |  64                   |      260647892 ns/op       |
+|        |  128                   |      1075045566 ns/op       |
+|    VSS Share Generation    |  4                   |      191175 ns/op       |
+|        |  8                   |      332393 ns/op       |
+|     |  16                   |      610982 ns/op       |
+|        |  32                   |      1264965 ns/op       |
+|        |  64                   |      2662454 ns/op       |
+|        |  128                   |      7105321 ns/op       |
+
+
 ## Configuration
 The following commands install the required packages and dependancies:
 ```sh

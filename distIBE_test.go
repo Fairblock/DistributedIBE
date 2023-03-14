@@ -178,7 +178,39 @@ func BenchmarkVSS(b *testing.B) {
 	}
 
 }
+func BenchmarkKZGShareGen(b *testing.B) {
 
+	for _, v := range participants {
+		
+		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				_, _, _, _, err := GenerateSharesKZG(uint32(v.input), uint32(v.input)-1)
+				if err != nil {
+					panic(err.Error())
+				}
+				
+
+			}
+		})
+	}
+
+}
+
+func BenchmarkVSSShareGen(b *testing.B) {
+
+	for _, v := range participants {
+		
+		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				_,_,_,err:= GenerateShares(uint32(v.input), uint32(v.input)-1)
+				if err != nil{
+					panic(err.Error())
+				}
+			}
+		})
+	}
+
+}
 var messageSize = []struct {
 	input int
 }{
