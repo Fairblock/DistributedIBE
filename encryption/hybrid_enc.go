@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"io"
+
 	"github.com/drand/kyber"
 	bls "github.com/drand/kyber-bls12381"
 )
@@ -91,7 +92,7 @@ func lock(publicKey kyber.Point, id []byte, data []byte) (*Ciphertext, error) {
 		return nil, fmt.Errorf("ErrInvalidPublicKey")
 	}
 
-	cipherText, err := EncryptIBE(bls.NewBLS12381Suite(), publicKey, id, data)
+	cipherText, err := EncryptCCAonG1(bls.NewBLS12381Suite(), publicKey, id, data)
 	if err != nil {
 		return nil, fmt.Errorf("encrypt data: %w", err)
 	}

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
 	"filippo.io/age/armor"
 	"github.com/drand/kyber"
 	bls "github.com/drand/kyber-bls12381"
@@ -121,7 +122,7 @@ func bytesToCiphertext(b []byte) (*Ciphertext, error) {
 
 func unlock(publicKey kyber.Point, signature kyber.Point, ciphertext *Ciphertext) ([]byte, error) {
 
-	data, err := DecryptIBE(bls.NewBLS12381Suite(), signature, ciphertext)
+	data, err := DecryptCCAonG1(bls.NewBLS12381Suite(), signature, ciphertext)
 	if err != nil {
 		return nil, fmt.Errorf("decrypt dek: %w", err)
 	}

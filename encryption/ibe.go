@@ -3,9 +3,13 @@ package distIBE
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/binary"
+
 	"errors"
 	"fmt"
+
 	"github.com/drand/kyber"
+	"github.com/drand/kyber/group/mod"
 	"github.com/drand/kyber/pairing"
 )
 
@@ -33,39 +37,76 @@ func H4Tag() []byte {
 }
 
 func h3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
-	h3 := s.Hash()
+	h := s.Hash()
 
-	if _, err := h3.Write(H3Tag()); err != nil {
+	if _, err := h.Write(H3Tag()); err != nil {
 		return nil, fmt.Errorf("err hashing h3 tag: %v", err)
 	}
-	if _, err := h3.Write(sigma); err != nil {
+	if _, err := h.Write(sigma); err != nil {
 		return nil, fmt.Errorf("err hashing sigma: %v", err)
 	}
-	_, _ = h3.Write(msg)
-	hashable, ok := s.G1().Scalar().(kyber.HashableScalar)
-	if !ok {
-		panic("scalar can't be created from hash")
+	if _, err := h.Write(msg); err != nil {
+		return nil, fmt.Errorf("err hashing msg: %v", err)
 	}
+	// we hash it a first time: buffer = hash("IBE-H3" || sigma || msg)
+	buffer := h.Sum(nil)
 
-	h3Reader := bytes.NewReader(h3.Sum(nil))
+	hashable, ok := s.G1().Scalar().(*mod.Int)
+	if !ok {
+		return nil, fmt.Errorf("unable to instantiate scalar as a mod.Int")
+	}
+	canonicalBitLen := hashable.MarshalSize() * 8
+	actualBitLen := hashable.M.BitLen()
+	toMask := canonicalBitLen - actualBitLen
 
-	return hashable.Hash(s, h3Reader)
+	for i := uint16(1); i < 65535; i++ {
+		h.Reset()
+		// We will hash iteratively: H(i || H("IBE-H3" || sigma || msg)) until we get a
+		// value that is suitable as a scalar.
+		iter := make([]byte, 2)
+		binary.LittleEndian.PutUint16(iter, i)
+		_, _ = h.Write(iter)
+		_, _ = h.Write(buffer)
+		hashed := h.Sum(nil)
+		// We then apply masking to our resulting bytes at the bit level
+		// but we assume that toMask is a few bits, at most 8.
+		// For instance when using BLS12-381 toMask == 1.
+		if hashable.BO == mod.BigEndian {
+			hashed[0] = hashed[0] >> toMask
+		} else {
+			hashed[len(hashed)-1] = hashed[len(hashed)-1] >> toMask
+		}
+		// NOTE: Here we unmarshal as a test if the buffer is within the modulo
+		// because we know unmarshal does this test. This implementation
+		// is almost generic if not for this line. TO make it truly generic
+		// we would need to add methods to create a scalar from bytes without
+		// reduction and a method to check if it is within the modulo on the
+		// Scalar interface.
+		if err := hashable.UnmarshalBinary(hashed); err == nil {
+			fmt.Println("value of i is ", i)
+			return hashable, nil
+		}
+	}
+	// if we didn't return in the for loop then something is wrong
+	return nil, fmt.Errorf("rejection sampling failure")
 }
 
-// Encrypt implements the cca identity based encryption scheme from
+// EncryptCCAonG1 implements the CCA identity-based encryption scheme from
 // https://crypto.stanford.edu/~dabo/pubs/papers/bfibe.pdf for more information
 // about the scheme.
 // - master is the master key on G1
+// - "identities" (rounds) are on G2
+// - the Ciphertext.U point will be on G1
 // - ID is the ID towards which we encrypt the message
 // - msg is the actual message
 // - seed is the random seed to generate the random element (sigma) of the encryption
 // The suite must produce points which implements the `HashablePoint` interface.
-func EncryptIBE(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertext, error) {
-
+func EncryptCCAonG1(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertext, error) {
 	if len(msg) > s.Hash().Size() {
 		return nil, errors.New("plaintext too long for the hash function provided")
 	}
 
+	// 1. Compute Gid = e(master,Q_id)
 	hG2, ok := s.G2().Point().(kyber.HashablePoint)
 	if !ok {
 		return nil, errors.New("point needs to implement `kyber.HashablePoint`")
@@ -83,13 +124,12 @@ func EncryptIBE(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertex
 	if err != nil {
 		return nil, err
 	}
-	//fmt.Println(sigma)
 	// 4. Compute U = rP
 	U := s.G1().Point().Mul(r, s.G1().Point().Base())
 
 	// 5. Compute V = sigma XOR H2(rGid)
 	rGid := Gid.Mul(r, Gid) // even in Gt, it's additive notation
-	hrGid, err := gtToHash(s, rGid, len(msg), H2Tag())
+	hrGid, err := gtToHash(s, rGid, len(msg))
 	if err != nil {
 		return nil, err
 	}
@@ -109,13 +149,15 @@ func EncryptIBE(s pairing.Suite, master kyber.Point, ID, msg []byte) (*Ciphertex
 	}, nil
 }
 
-func DecryptIBE(s pairing.Suite, private kyber.Point, c *Ciphertext) ([]byte, error) {
+// DecryptCCAonG1 decrypts ciphertexts encrypted using EncryptCCAonG1 given a G2 "private" point
+func DecryptCCAonG1(s pairing.Suite, private kyber.Point, c *Ciphertext) ([]byte, error) {
 	if len(c.W) > s.Hash().Size() {
 		return nil, errors.New("ciphertext too long for the hash function provided")
 	}
 
+	// 1. Compute sigma = V XOR H2(e(rP,private))
 	rGid := s.Pair(c.U, private)
-	hrGid, err := gtToHash(s, rGid, len(c.W), H2Tag())
+	hrGid, err := gtToHash(s, rGid, len(c.W))
 	if err != nil {
 		return nil, err
 	}
@@ -137,14 +179,11 @@ func DecryptIBE(s pairing.Suite, private kyber.Point, c *Ciphertext) ([]byte, er
 	if err != nil {
 		return nil, err
 	}
-
 	rP := s.G1().Point().Mul(r, s.G1().Point().Base())
 	if !rP.Equal(c.U) {
 		return nil, fmt.Errorf("invalid proof: rP check failed")
 	}
-
 	return msg, nil
-
 }
 
 func h4(s pairing.Suite, sigma []byte, length int) ([]byte, error) {
@@ -166,10 +205,10 @@ func h4(s pairing.Suite, sigma []byte, length int) ([]byte, error) {
 	return h4sigma, nil
 }
 
-func gtToHash(s pairing.Suite, gt kyber.Point, length int, dst []byte) ([]byte, error) {
+func gtToHash(s pairing.Suite, gt kyber.Point, length int) ([]byte, error) {
 	hash := s.Hash()
 
-	if _, err := hash.Write(dst); err != nil {
+	if _, err := hash.Write(H2Tag()); err != nil {
 		return nil, errors.New("err writing dst to gtHash")
 	}
 	if _, err := gt.MarshalTo(hash); err != nil {
