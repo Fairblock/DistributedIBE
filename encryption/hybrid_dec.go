@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
 	"filippo.io/age/armor"
 	"github.com/drand/kyber"
 	bls "github.com/drand/kyber-bls12381"
+  ibe "github.com/drand/kyber/encrypt/ibe"
 )
 
 func Decrypt(pk kyber.Point, sk kyber.Point, dst io.Writer, src io.Reader) error {
@@ -90,7 +92,7 @@ func unwrap(pk kyber.Point, sk kyber.Point, stanzas []*Stanza) ([]byte, error) {
 	return fileKey, nil
 }
 
-func bytesToCiphertext(b []byte) (*Ciphertext, error) {
+func bytesToCiphertext(b []byte) (*ibe.Ciphertext, error) {
 	expLen := kyberPointLen + cipherVLen + cipherWLen
 	if len(b) != expLen {
 		return nil, fmt.Errorf("incorrect length: exp: %d got: %d", expLen, len(b))
@@ -110,7 +112,7 @@ func bytesToCiphertext(b []byte) (*Ciphertext, error) {
 		return nil, fmt.Errorf("unmarshal kyber G1: %w", err)
 	}
 
-	ct := Ciphertext{
+	ct := ibe.Ciphertext{
 		U: &u,
 		V: cipherV,
 		W: cipherW,
@@ -119,9 +121,9 @@ func bytesToCiphertext(b []byte) (*Ciphertext, error) {
 	return &ct, nil
 }
 
-func unlock(publicKey kyber.Point, signature kyber.Point, ciphertext *Ciphertext) ([]byte, error) {
+func unlock(publicKey kyber.Point, signature kyber.Point, ciphertext *ibe.Ciphertext) ([]byte, error) {
 
-	data, err := DecryptIBE(bls.NewBLS12381Suite(), signature, ciphertext)
+	data, err := ibe.DecryptCCAonG1(bls.NewBLS12381Suite(), signature, ciphertext)
 	if err != nil {
 		return nil, fmt.Errorf("decrypt dek: %w", err)
 	}

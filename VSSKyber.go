@@ -261,21 +261,19 @@ func GenerateSharesKZG(numberOfShares, threshold uint32) (kyber.Point, kyber.Poi
 		shares[j] = Share{Index: index[j], Value: value[j]}
 
 	}
-	
-	
+
 	for i := 0; i < int(numberOfShares); i++ {
 		p, err = Open(randomPoly, shares[i].Index, shares[i].Value, srs)
 		if err != nil {
 			return nil, nil, nil, SRS{}, err
 		}
-	
+
 		proof[i].H = s.G1().Point().Base()
 		proof[i].H.Set(p.H)
 		proof[i].ClaimedValue = p.ClaimedValue
 		proof[i].Index = p.Index
 
 	}
-	
 
 	return MPK, commitment, proof, srs, nil
 }
