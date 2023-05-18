@@ -7,13 +7,15 @@ import (
 
 	"github.com/drand/kyber"
 	bls "github.com/drand/kyber-bls12381"
+	ibe "github.com/drand/kyber/encrypt/ibe"
 )
 
-const fileKeySize = 32
-const streamNonceSize = 16
+const (
+	fileKeySize     = 32
+	streamNonceSize = 16
+)
 
 func Encrypt(pk kyber.Point, id []byte, dst io.Writer, src io.Reader) (err error) {
-
 	w, err := encrypt(pk, id, dst)
 	if err != nil {
 		return fmt.Errorf("age encrypt: %w", err)
@@ -33,7 +35,6 @@ func Encrypt(pk kyber.Point, id []byte, dst io.Writer, src io.Reader) (err error
 }
 
 func encrypt(pk kyber.Point, id []byte, dst io.Writer) (io.WriteCloser, error) {
-
 	fileKey := make([]byte, fileKeySize)
 	if _, err := rand.Read(fileKey); err != nil {
 		return nil, err
@@ -87,12 +88,12 @@ func wrap(pk kyber.Point, fileKey []byte, id []byte) ([]*Stanza, error) {
 	return []*Stanza{&stanza}, nil
 }
 
-func lock(publicKey kyber.Point, id []byte, data []byte) (*Ciphertext, error) {
+func lock(publicKey kyber.Point, id []byte, data []byte) (*ibe.Ciphertext, error) {
 	if publicKey.Equal(publicKey.Null()) {
 		return nil, fmt.Errorf("ErrInvalidPublicKey")
 	}
 
-	cipherText, err := EncryptCCAonG1(bls.NewBLS12381Suite(), publicKey, id, data)
+	cipherText, err := ibe.EncryptCCAonG1(bls.NewBLS12381Suite(), publicKey, id, data)
 	if err != nil {
 		return nil, fmt.Errorf("encrypt data: %w", err)
 	}
@@ -107,7 +108,7 @@ const (
 )
 
 // CiphertextToBytes converts a ciphertext value to a set of bytes.
-func ciphertextToBytes(ciphertext *Ciphertext) ([]byte, error) {
+func ciphertextToBytes(ciphertext *ibe.Ciphertext) ([]byte, error) {
 	kyberPoint, err := ciphertext.U.MarshalBinary()
 	if err != nil {
 		return nil, fmt.Errorf("marshal kyber point: %w", err)
