@@ -21,37 +21,6 @@ type Share struct {
 	Value kyber.Scalar
 }
 
-// func H3Tag() []byte {
-// 	return []byte("IBE-H3")
-// }
-
-// func h3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
-// 	h3 := s.Hash()
-
-// 	if _, err := h3.Write(H3Tag()); err != nil {
-// 		return nil, fmt.Errorf("err hashing h3 tag: %v", err)
-// 	}
-// 	if _, err := h3.Write(sigma); err != nil {
-// 		return nil, fmt.Errorf("err hashing sigma: %v", err)
-// 	}
-// 	_, _ = h3.Write(msg)
-// 	hashable, ok := s.G1().Scalar().(kyber.HashableScalar)
-// 	if !ok {
-// 		panic("scalar can't be created from hash")
-// 	}
-
-// 	h3Reader := bytes.NewReader(h3.Sum(nil))
-
-// 	return hashable.Hash(s, h3Reader)
-// }
-
-// func bigFromHex(hex string) *big.Int {
-// 	if len(hex) > 1 && hex[:2] == "0x" {
-// 		hex = hex[2:]
-// 	}
-// 	n, _ := new(big.Int).SetString(hex, 16)
-// 	return n
-// }
 
 func hexToBin(hexString string) string {
 
@@ -214,69 +183,69 @@ func GenerateShares(numberOfShares, threshold uint32) (shares []Share, MPK kyber
 	return shares, MPK, commits, nil
 }
 
-func GenerateSharesKZG(numberOfShares, threshold uint32) (kyber.Point, kyber.Point, []OpeningProof, SRS, error) {
-	buf := make([]byte, 128)
-	groupOrder := bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
-	s := bls.NewBLS12381Suite()
+// func GenerateSharesKZG(numberOfShares, threshold uint32) (kyber.Point, kyber.Point, []OpeningProof, SRS, error) {
+// 	buf := make([]byte, 128)
+// 	groupOrder := bigFromHex("0x73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001")
+// 	s := bls.NewBLS12381Suite()
 
-	_, err := rand.Read(buf)
-	if err != nil {
-		return nil, nil, nil, SRS{}, err
-	}
-	var secretVal []byte = buf
-	masterSecretKey, _ := h3(s, secretVal, []byte("msg"))
-	MPK := s.G1().Point().Mul(masterSecretKey, s.G1().Point().Base())
-	polynomial, err := createRandomPolynomial(threshold, masterSecretKey, groupOrder)
+// 	_, err := rand.Read(buf)
+// 	if err != nil {
+// 		return nil, nil, nil, SRS{}, err
+// 	}
+// 	var secretVal []byte = buf
+// 	masterSecretKey, _ := h3(s, secretVal, []byte("msg"))
+// 	MPK := s.G1().Point().Mul(masterSecretKey, s.G1().Point().Base())
+// 	polynomial, err := createRandomPolynomial(threshold, masterSecretKey, groupOrder)
 
-	if err != nil {
-		return nil, nil, nil, SRS{}, fmt.Errorf("shares could not be created due to random polynomial generation failing")
-	}
+// 	if err != nil {
+// 		return nil, nil, nil, SRS{}, fmt.Errorf("shares could not be created due to random polynomial generation failing")
+// 	}
 
-	randomPoly := polynomial
+// 	randomPoly := polynomial
 
-	index := make([]kyber.Scalar, numberOfShares)
-	value := make([]kyber.Scalar, numberOfShares)
+// 	index := make([]kyber.Scalar, numberOfShares)
+// 	value := make([]kyber.Scalar, numberOfShares)
 
-	for i := range index {
-		index[i] = bls.NewKyberScalar().SetInt64(int64(i + 1))
-		evalPoly := polynomial.eval(index[i])
-		value[i] = evalPoly
-	}
-	srs, err := NewSRS(uint64(threshold))
-	if err != nil {
-		return nil, nil, nil, SRS{}, err
-	}
-	commitment, err := Commit(randomPoly, srs)
-	if err != nil {
-		return nil, nil, nil, SRS{}, err
-	}
+// 	for i := range index {
+// 		index[i] = bls.NewKyberScalar().SetInt64(int64(i + 1))
+// 		evalPoly := polynomial.eval(index[i])
+// 		value[i] = evalPoly
+// 	}
+// 	srs, err := NewSRS(uint64(threshold))
+// 	if err != nil {
+// 		return nil, nil, nil, SRS{}, err
+// 	}
+// 	commitment, err := Commit(randomPoly, srs)
+// 	if err != nil {
+// 		return nil, nil, nil, SRS{}, err
+// 	}
 
-	var proof []OpeningProof
-	proof = make([]OpeningProof, numberOfShares)
-	var p OpeningProof
+// 	var proof []OpeningProof
+// 	proof = make([]OpeningProof, numberOfShares)
+// 	var p OpeningProof
 
-	var shares []Share
-	shares = make([]Share, numberOfShares)
-	for j := range shares {
-		shares[j] = Share{Index: index[j], Value: value[j]}
+// 	var shares []Share
+// 	shares = make([]Share, numberOfShares)
+// 	for j := range shares {
+// 		shares[j] = Share{Index: index[j], Value: value[j]}
 
-	}
+// 	}
 
-	for i := 0; i < int(numberOfShares); i++ {
-		p, err = Open(randomPoly, shares[i].Index, shares[i].Value, srs)
-		if err != nil {
-			return nil, nil, nil, SRS{}, err
-		}
+// 	for i := 0; i < int(numberOfShares); i++ {
+// 		p, err = Open(randomPoly, shares[i].Index, shares[i].Value, srs)
+// 		if err != nil {
+// 			return nil, nil, nil, SRS{}, err
+// 		}
 
-		proof[i].H = s.G1().Point().Base()
-		proof[i].H.Set(p.H)
-		proof[i].ClaimedValue = p.ClaimedValue
-		proof[i].Index = p.Index
+// 		proof[i].H = s.G1().Point().Base()
+// 		proof[i].H.Set(p.H)
+// 		proof[i].ClaimedValue = p.ClaimedValue
+// 		proof[i].Index = p.Index
 
-	}
+// 	}
 
-	return MPK, commitment, proof, srs, nil
-}
+// 	return MPK, commitment, proof, srs, nil
+// }
 
 func lagrangeCoefficientFromShares(indexJ kyber.Scalar, shares []Share) kyber.Scalar {
 	nominator := bls.NewKyberScalar().SetInt64(int64(1))

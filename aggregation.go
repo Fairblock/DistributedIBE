@@ -10,7 +10,7 @@ func AggregateSK(s pairing.Suite, receivedShares []ExtractedKey, commitments []C
 	invalid := []uint32{}
 	valid := []uint32{}
 	validShare := []ExtractedKey{}
-	for i, _ := range receivedShares {
+	for i := range receivedShares {
 		receivedShare := receivedShares[i]
 		commitment := commitments[i]
 		hG2, ok := s.G2().Point().(kyber.HashablePoint)

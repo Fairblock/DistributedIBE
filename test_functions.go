@@ -23,25 +23,6 @@ func H3Tag() []byte {
 	return []byte("IBE-H3")
 }
 
-// func h3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
-// 	h3 := s.Hash()
-
-// 	if _, err := h3.Write(H3Tag()); err != nil {
-// 		return nil, fmt.Errorf("err hashing h3 tag: %v", err)
-// 	}
-// 	if _, err := h3.Write(sigma); err != nil {
-// 		return nil, fmt.Errorf("err hashing sigma: %v", err)
-// 	}
-// 	_, _ = h3.Write(msg)
-// 	hashable, ok := s.G1().Scalar().(kyber.HashableScalar)
-// 	if !ok {
-// 		panic("scalar can't be created from hash")
-// 	}
-
-// 	h3Reader := bytes.NewReader(h3.Sum(nil))
-
-// 	return hashable.Hash(s, h3Reader)
-// }
 
 func h3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
 	h := s.Hash()
@@ -605,41 +586,7 @@ func Shares(n int, t int, ID string) ([]Commitment, []Share, []int, error) {
 	return c, shares, signers, nil
 }
 
-func KZGTest(n uint32, t uint32) error {
 
-	_, commitment, proof, srs, err := GenerateSharesKZG(n, t)
-	if err != nil {
-		return err
-	}
-
-	for i := 0; uint32(i) < n; i++ {
-
-		err = Verify(commitment, proof[i], proof[i].Index, srs)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func KZGTestFail(n uint32, t uint32) error {
-
-	_, commitment, proof, srs, err := GenerateSharesKZG(n, t)
-	if err != nil {
-		return err
-	}
-	// Changing a proof to a wrong value
-	proof[1].H = proof[1].H.Add(proof[1].H, proof[1].H)
-
-	for i := 0; uint32(i) < n; i++ {
-
-		err = Verify(commitment, proof[i], proof[i].Index, srs)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
 
 func VSSTest(n uint32, t uint32) error {
 

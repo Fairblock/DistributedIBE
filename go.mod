@@ -7,6 +7,7 @@ require (
 	github.com/drand/kyber v1.2.0
 	github.com/drand/kyber-bls12381 v0.2.5
 	golang.org/x/crypto v0.7.0
+	
 )
 
 require (
