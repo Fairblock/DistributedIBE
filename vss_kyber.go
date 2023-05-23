@@ -13,17 +13,17 @@ import (
 	// "github.com/drand/kyber/proof"
 )
 
-type PolynomialCoeff []kyber.Scalar
-type Commitments []kyber.Point
+type (
+	PolynomialCoeff []kyber.Scalar
+	Commitments     []kyber.Point
+)
 
 type Share struct {
 	Index kyber.Scalar
 	Value kyber.Scalar
 }
 
-
 func hexToBin(hexString string) string {
-
 	hexChar2BinChar := map[string]string{
 		"0": "0000",
 		"1": "0001",
@@ -95,7 +95,6 @@ func (p PolynomialCoeff) eval(x kyber.Scalar) kyber.Scalar {
 }
 
 func Exp(base, exponent kyber.Scalar) kyber.Scalar {
-
 	if exponent.Equal(bls.NewKyberScalar().Zero()) {
 		return bls.NewKyberScalar().One()
 	}
@@ -159,7 +158,6 @@ func GenerateShares(numberOfShares, threshold uint32) (shares []Share, MPK kyber
 	masterSecretKey, _ := h3(s, secretVal, []byte("msg"))
 	MPK = s.G1().Point().Mul(masterSecretKey, s.G1().Point().Base())
 	polynomial, err := createRandomPolynomial(threshold, masterSecretKey, groupOrder)
-
 	if err != nil {
 		return shares, nil, nil, fmt.Errorf("shares could not be created due to random polynomial generation failing")
 	}
@@ -259,7 +257,7 @@ func lagrangeCoefficientFromShares(indexJ kyber.Scalar, shares []Share) kyber.Sc
 
 		}
 	}
-	return bls.NewKyberScalar().SetInt64(int64(1)).Div(nominator, denominator) //Inverse will panic if denominator is 0
+	return bls.NewKyberScalar().SetInt64(int64(1)).Div(nominator, denominator) // Inverse will panic if denominator is 0
 }
 
 func LagrangeCoefficient(suite pairing.Suite, signer uint32, S []uint32) kyber.Scalar {
@@ -304,7 +302,6 @@ func RegenerateSecret(threshold uint32, shares []Share) (masterSecretKey kyber.S
 }
 
 func GenerateCommits(polynomial PolynomialCoeff) (commits Commitments) {
-
 	s := bls.NewBLS12381Suite()
 	PointG := s.G1().Point().Base()
 	commits = make(Commitments, len(polynomial))
@@ -317,7 +314,6 @@ func GenerateCommits(polynomial PolynomialCoeff) (commits Commitments) {
 }
 
 func VerifyShare(share Share, commits Commitments) bool {
-
 	s := bls.NewBLS12381Suite()
 	PointG := s.G1().Point().Base()
 
