@@ -1,3 +1,7 @@
+// Copyright (c) 2022 drand team
+// The license can be found at https://github.com/drand/tlock/blob/main/LICENSE-MIT and https://github.com/drand/tlock/blob/main/LICENSE-APACHE
+
+
 package distIBE
 
 import (

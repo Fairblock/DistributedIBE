@@ -1,3 +1,5 @@
+// Copyright © 2023 · Golang Docs
+
 package distIBE
 
 import (
