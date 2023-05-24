@@ -154,7 +154,7 @@ func GenerateShares(numberOfShares, threshold uint32) (shares []Share, MPK kyber
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	var secretVal []byte = buf
+	secretVal := buf
 	masterSecretKey, _ := h3(s, secretVal, []byte("msg"))
 	MPK = s.G1().Point().Mul(masterSecretKey, s.G1().Point().Base())
 	polynomial, err := createRandomPolynomial(threshold, masterSecretKey, groupOrder)
@@ -280,7 +280,7 @@ func LagrangeCoefficient(suite pairing.Suite, signer uint32, S []uint32) kyber.S
 		}
 	}
 
-	var outScalar kyber.Scalar = bls.NewKyberScalar()
+	outScalar := bls.NewKyberScalar()
 	kyber.Scalar.Div(outScalar, nominator, denominator)
 
 	return outScalar
@@ -313,7 +313,7 @@ func GenerateCommits(polynomial PolynomialCoeff) (commits Commitments) {
 	return commits
 }
 
-func VerifyShare(share Share, commits Commitments) bool {
+func VerifyVSSShare(share Share, commits Commitments) bool {
 	s := bls.NewBLS12381Suite()
 	PointG := s.G1().Point().Base()
 

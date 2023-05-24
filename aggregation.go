@@ -18,7 +18,7 @@ func AggregateSK(s pairing.Suite, receivedShares []ExtractedKey, commitments []C
 			panic("point needs to implement `kyber.HashablePoint`")
 		}
 		Qid := hG2.Hash(id)
-		if verifyShare(s, commitment, receivedShare, Qid) {
+		if VerifyShare(s, commitment, receivedShare, Qid) {
 			valid = append(valid, receivedShare.Index)
 			validShare = append(validShare, receivedShare)
 		} else {
@@ -44,7 +44,7 @@ func processSK(suite pairing.Suite, share ExtractedKey, S []uint32) ExtractedKey
 }
 
 func aggregate(keys ...kyber.Point) kyber.Point {
-	var sk kyber.Point = keys[0]
+	var sk = keys[0]
 	for _, key := range keys {
 
 		if key != sk {

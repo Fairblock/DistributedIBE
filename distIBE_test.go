@@ -130,7 +130,7 @@ func BenchmarkVSS(b *testing.B) {
 		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				for i := 0; uint32(i) < uint32(v.input); i++ {
-					res := VerifyShare(shares[i],commitments)
+					res := VerifyVSSShare(shares[i],commitments)
 					if !res{
 						panic("wrong share")
 					}

@@ -12,7 +12,7 @@ type Commitment struct {
 	Index uint32
 }
 
-func verifyShare(s pairing.Suite, c Commitment, share ExtractedKey, qid kyber.Point) bool {
+func VerifyShare(s pairing.Suite, c Commitment, share ExtractedKey, qid kyber.Point) bool {
 	//e(s1 * P, H(ID))
 	a := s.Pair(c.SP, qid)
 	//e(P, s1 * H(ID))

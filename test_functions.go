@@ -595,7 +595,7 @@ func VSSTest(n uint32, t uint32) error {
 		return err
 	}
 	for i := 0; uint32(i) < n; i++ {
-		res := VerifyShare(shares[i], commitments)
+		res := VerifyVSSShare(shares[i], commitments)
 		if !res {
 			return fmt.Errorf("wrong share")
 		}
