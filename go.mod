@@ -1,4 +1,4 @@
-module DistributedIBE v0.0.0
+module github.com/FairBlock/DistributedIBE 
 
 go 1.18
 
