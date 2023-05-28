@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"sync"
 
-	enc "DistributedIBE/encryption"
+	enc "github.com/FairBlock/DistributedIBE/encryption"
 
 	//"github.com/aws/aws-sdk-go/service/panorama"
 	"github.com/drand/kyber"
@@ -22,7 +22,6 @@ import (
 func H3Tag() []byte {
 	return []byte("IBE-H3")
 }
-
 
 func h3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
 	h := s.Hash()
@@ -585,8 +584,6 @@ func Shares(n int, t int, ID string) ([]Commitment, []Share, []int, error) {
 
 	return c, shares, signers, nil
 }
-
-
 
 func VSSTest(n uint32, t uint32) error {
 
