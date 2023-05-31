@@ -70,7 +70,7 @@ func h3(s pairing.Suite, sigma, msg []byte) (kyber.Scalar, error) {
 		// reduction and a method to check if it is within the modulo on the
 		// Scalar interface.
 		if err := hashable.UnmarshalBinary(hashed); err == nil {
-			fmt.Println("value of i is ", i)
+			// fmt.Println("value of i is ", i)
 			return hashable, nil
 		}
 	}
