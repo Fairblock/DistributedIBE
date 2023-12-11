@@ -1,7 +1,7 @@
 # DistributedIBE
-This library implements distributed IBE scheme based on Boneh-Franklin scheme. 
+This library implements the Threshold IBE scheme based on Boneh-Franklin scheme. 
 ## Security Parameters
-This scheme relies on the hybrid encryption. We use the implementation of such scheme by `FiloSottile/age` which only encrypts a random symmetric key that is used to actually symmetrically encrypt the data using `Chacha20Poly1305`.
+This scheme relies on the hybrid encryption. We use the implementation of such scheme by `FiloSottile/age` which only encrypts a random symmetric key that is used to encrypt the data using `Chacha20Poly1305`.
 
 The used symmetric key is of size `32` bytes. The implementation of IBE scheme used to encrypt this key uses the `BLS12-381` curve.
 
