@@ -19,7 +19,7 @@ The below table shows the runtime of the scheme covering share generation, key e
 |    64                 |             144968458 ns/op  |
 |    128                 |             290355378 ns/op  |
 
-Based on the above table, we can clearly see that the executrion time increases linearly with the number of validators.
+Based on the above table, we can clearly see that the execution time increases linearly with the number of validators.
 
 Since the message is being encrypted first and the key is used for the IBE, we expect the execution time to be independent of the message size. The microbenchmarking results confirm this as shown in the below table:
 
@@ -91,7 +91,7 @@ Below, we compare the verification time for KZG commitments vs VSS.
 
 
 ## Configuration
-The following commands install the required packages and dependancies:
+The following commands install the required packages and dependencies:
 ```sh
 go mod init DistributedIBE
 go mod tidy
