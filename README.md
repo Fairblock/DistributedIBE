@@ -91,7 +91,7 @@ Below, we compare the verification time for KZG commitments vs VSS.
 
 
 ## Configuration
-The following commands install the required packages and dependancies:
+The following commands install the required packages and dependencies:
 ```sh
 go mod init DistributedIBE
 go mod tidy
