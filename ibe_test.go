@@ -40,7 +40,7 @@ func main() {
 
 	C, err := ibe.EncryptCCAonG1(s, masterPublicKey, byteID, byteMessage)
 	if err != nil {
-		fmt.Println("error in encryption occured ", err.Error())
+		fmt.Println("error in encryption occurred ", err.Error())
 	}
 
 	fmt.Println(C)
