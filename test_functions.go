@@ -125,7 +125,7 @@ func DistributedIBE(n int, t int, ID string, src bytes.Buffer, message string) (
 
 	var c []Commitment
 	for j := 0; j < n; j++ {
-		fmt.Println(shares[j].Value)
+		//fmt.Println(shares[j].Value)
 		if signers[j] == 1 {
 			c = append(c, Commitment{s.G1().Point().Mul(shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
 		}

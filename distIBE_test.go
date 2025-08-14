@@ -2,13 +2,16 @@ package distIBE
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"reflect"
 	"sync"
 	"testing"
 	
 	bls "github.com/drand/kyber-bls12381"
+	"github.com/drand/kyber"
+	enc "github.com/FairBlock/DistributedIBE/encryption"
 )
 
 func TestVSS(t *testing.T) {
@@ -160,37 +163,101 @@ func BenchmarkVSSShareGen(b *testing.B) {
 var messageSize = []struct {
 	input int
 }{
-
 	{input: 8},
 	{input: 32},
 	{input: 128},
 	{input: 512},
 	{input: 2048},
 	{input: 8192},
+	{input: 32768},
+	{input: 131072},
+	{input: 524288},
+	{input: 1048576},
+	{input: 10485760},
+	{input: 104857600},
 }
 
 func randomStringGenerator(n int) string {
-	var letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	
+
 	byteString := make([]byte, n)
+	
+
 	for i := range byteString {
-		byteString[i] = letters[rand.Intn(len(letters))]
+
+		randomBytes := make([]byte, 1)
+		rand.Read(randomBytes)
+		index := int(randomBytes[0]) % len(letters)
+		byteString[i] = letters[index]
 	}
+	
 	return string(byteString)
 }
 
+
+
+
+
+
+
+
+
+
 func BenchmarkDistributedIBEEMessageSize(b *testing.B) {
 
+	const (
+		nParticipants = 4
+		threshold     = 3
+		identity      = "300"
+		warmupRuns    = 3
+	)
+	
+
+	messages := make(map[int]string)
+	plainDataBuffers := make(map[int]bytes.Buffer)
+	
 	for _, v := range messageSize {
-		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
-			message := randomStringGenerator(v.input)
-			var plainData bytes.Buffer
-			plainData.WriteString(message)
+		message := randomStringGenerator(v.input)
+		messages[v.input] = message
+		
+		var plainData bytes.Buffer
+		plainData.WriteString(message)
+		plainDataBuffers[v.input] = plainData
+	}
+	
+	for _, v := range messageSize {
+		message := messages[v.input]
+		plainData := plainDataBuffers[v.input]
+		
+		b.Run(fmt.Sprintf("MessageSize_%d_bytes", v.input), func(b *testing.B) {
+
+			for i := 0; i < warmupRuns; i++ {
+				_, err := DistributedIBE(nParticipants, threshold, identity, plainData, message)
+				if err != nil {
+					b.Fatalf("Warm-up run failed: %v", err)
+				}
+			}
+			
+
+			b.ResetTimer()
+			
+
 			for i := 0; i < b.N; i++ {
-				DistributedIBE(4, 3, "300", plainData, message)
+
+				b.ReportAllocs()
+				
+
+				success, err := DistributedIBE(nParticipants, threshold, identity, plainData, message)
+				
+
+				if !success {
+					b.Fatalf("DistributedIBE failed: %v", err)
+				}
 			}
 		})
 	}
-
 }
 
 var messageNum = []struct {
@@ -322,7 +389,7 @@ func BenchmarkExtractAndAggregate(b *testing.B) {
 		b.Run(fmt.Sprintf("input_size_%d", v.input), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 
-				// Extracting the keys using shares
+
 				var sk []ExtractedKey
 				for k := 0; k < 100; k++ {
 					if signers[k] == 1 {
@@ -338,4 +405,652 @@ func BenchmarkExtractAndAggregate(b *testing.B) {
 		})
 	}
 
+}
+
+
+
+func BenchmarkDistributedIBEThroughput(b *testing.B) {
+	const (
+		nParticipants = 4
+		threshold     = 3
+		identity      = "300"
+		warmupRuns    = 3
+	)
+	
+
+	messages := make(map[int]string)
+	plainDataBuffers := make(map[int]bytes.Buffer)
+	
+	for _, v := range messageSize {
+		message := randomStringGenerator(v.input)
+		messages[v.input] = message
+		
+		var plainData bytes.Buffer
+		plainData.WriteString(message)
+		plainDataBuffers[v.input] = plainData
+	}
+	
+	for _, v := range messageSize {
+		message := messages[v.input]
+		plainData := plainDataBuffers[v.input]
+		
+		b.Run(fmt.Sprintf("Throughput_%d_bytes", v.input), func(b *testing.B) {
+
+			for i := 0; i < warmupRuns; i++ {
+				_, err := DistributedIBE(nParticipants, threshold, identity, plainData, message)
+				if err != nil {
+					b.Fatalf("Warm-up run failed: %v", err)
+				}
+			}
+			
+			b.ResetTimer()
+			
+
+			b.SetBytes(int64(v.input))
+			
+			for i := 0; i < b.N; i++ {
+				success, err := DistributedIBE(nParticipants, threshold, identity, plainData, message)
+				if !success {
+					b.Fatalf("DistributedIBE failed: %v", err)
+				}
+			}
+		})
+	}
+}
+
+
+
+func BenchmarkDistributedIBEMemoryProfile(b *testing.B) {
+	const (
+		nParticipants = 4
+		threshold     = 3
+		identity      = "300"
+	)
+	
+
+	largeMessageSizes := []struct {
+		input int
+	}{
+		{input: 8192},
+		{input: 32768},
+		{input: 131072},
+		{input: 524288},
+		{input: 1048576},
+		{input: 10485760},
+	}
+	
+	for _, v := range largeMessageSizes {
+		message := randomStringGenerator(v.input)
+		var plainData bytes.Buffer
+		plainData.WriteString(message)
+		
+		b.Run(fmt.Sprintf("MemoryProfile_%d_bytes", v.input), func(b *testing.B) {
+
+			b.ReportAllocs()
+			
+			for i := 0; i < b.N; i++ {
+				success, err := DistributedIBE(nParticipants, threshold, identity, plainData, message)
+				if !success {
+					b.Fatalf("DistributedIBE failed: %v", err)
+				}
+			}
+		})
+	}
+}
+
+
+
+func BenchmarkDistributedIBEScalability(b *testing.B) {
+	const (
+		identity   = "300"
+		warmupRuns = 3
+		messageSize = 8192
+	)
+	
+
+	configurations := []struct {
+		participants int
+		threshold    int
+		description  string
+	}{
+		{4, 3, "4p_3t"},
+		{8, 6, "8p_6t"},
+		{16, 12, "16p_12t"},
+		{32, 24, "32p_24t"},
+		{64, 48, "64p_48t"},
+	}
+	
+	message := randomStringGenerator(messageSize)
+	var plainData bytes.Buffer
+	plainData.WriteString(message)
+	
+	for _, config := range configurations {
+		b.Run(fmt.Sprintf("Scalability_%s", config.description), func(b *testing.B) {
+
+			for i := 0; i < warmupRuns; i++ {
+				_, err := DistributedIBE(config.participants, config.threshold, identity, plainData, message)
+				if err != nil {
+					b.Fatalf("Warm-up run failed: %v", err)
+				}
+			}
+			
+			b.ResetTimer()
+			b.ReportAllocs()
+			
+			for i := 0; i < b.N; i++ {
+				success, err := DistributedIBE(config.participants, config.threshold, identity, plainData, message)
+				if !success {
+					b.Fatalf("DistributedIBE failed: %v", err)
+				}
+			}
+		})
+	}
+}
+
+
+
+
+func BenchmarkDistributedIBEComprehensive(b *testing.B) {
+
+
+	
+	b.Run("MessageSize", BenchmarkDistributedIBEEMessageSize)
+	b.Run("Throughput", BenchmarkDistributedIBEThroughput)
+	b.Run("MemoryProfile", BenchmarkDistributedIBEMemoryProfile)
+	b.Run("Scalability", BenchmarkDistributedIBEScalability)
+	b.Run("DecryptionOnly", BenchmarkDistributedIBEDecryptionOnly)
+	b.Run("DecryptionThroughput", BenchmarkDistributedIBEDecryptionThroughput)
+	b.Run("EncryptionOnly", BenchmarkDistributedIBEEncryptionOnly)
+	b.Run("EncryptionThroughput", BenchmarkDistributedIBEEncryptionThroughput)
+	b.Run("KeyGenerationOnly", BenchmarkDistributedIBEKeyGenerationOnly)
+}
+
+
+
+func BenchmarkDistributedIBEStressTest(b *testing.B) {
+	const (
+		nParticipants = 4
+		threshold     = 3
+		identity      = "300"
+	)
+	
+
+	stressMessageSizes := []struct {
+		input int
+		description string
+	}{
+		{1048576, "1MB"},
+		{10485760, "10MB"},
+		{52428800, "50MB"},
+		{104857600, "100MB"},
+	}
+	
+	for _, v := range stressMessageSizes {
+		b.Run(fmt.Sprintf("StressTest_%s", v.description), func(b *testing.B) {
+
+			message := randomStringGenerator(v.input)
+			var plainData bytes.Buffer
+			plainData.WriteString(message)
+			
+
+			if v.input >= 104857600 {
+				b.N = min(b.N, 10)
+			} else if v.input >= 10485760 {
+				b.N = min(b.N, 50)
+			}
+			
+			b.ResetTimer()
+			b.ReportAllocs()
+			
+			for i := 0; i < b.N; i++ {
+				success, err := DistributedIBE(nParticipants, threshold, identity, plainData, message)
+				if !success {
+					b.Fatalf("DistributedIBE failed: %v", err)
+				}
+			}
+		})
+	}
+}
+
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+
+
+
+func BenchmarkDistributedIBEDecryptionOnly(b *testing.B) {
+	const (
+		nParticipants = 4
+		threshold     = 3
+		identity      = "300"
+		warmupRuns    = 3
+	)
+	
+
+	type testData struct {
+		message    string
+		cipherData bytes.Buffer
+		PK         kyber.Point
+		SK         kyber.Point
+	}
+	
+	testDataMap := make(map[int]testData)
+	
+
+	for _, v := range messageSize {
+		message := randomStringGenerator(v.input)
+		var plainData bytes.Buffer
+		plainData.WriteString(message)
+		
+
+		shares, PK, _, _ := GenerateShares(uint32(nParticipants), uint32(threshold))
+		
+
+		signers := make([]int, nParticipants)
+		for i := 0; i < nParticipants; i++ {
+			signers[i] = 0
+		}
+		j := 0
+		for j < threshold+1 {
+			randomVal, _ := rand.Int(rand.Reader, big.NewInt(int64(nParticipants)))
+			if signers[randomVal.Int64()] == 0 {
+				signers[randomVal.Int64()] = 1
+				j++
+			}
+		}
+		
+
+		s := bls.NewBLS12381Suite()
+		var c []Commitment
+		for j := 0; j < nParticipants; j++ {
+			if signers[j] == 1 {
+				c = append(c, Commitment{s.G1().Point().Mul(shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
+			}
+		}
+		
+
+		var sk []ExtractedKey
+		for k := 0; k < nParticipants; k++ {
+			if signers[k] == 1 {
+				sk = append(sk, Extract(s, shares[k].Value, uint32(k+1), []byte(identity)))
+			}
+		}
+		
+
+		SK, _ := AggregateSK(s, sk, c, []byte(identity))
+		
+
+		var cipherData bytes.Buffer
+		_ = enc.Encrypt(PK, []byte(identity), &cipherData, &plainData)
+		
+		testDataMap[v.input] = testData{
+			message:    message,
+			cipherData: cipherData,
+			PK:         PK,
+			SK:         SK,
+		}
+	}
+	
+
+	for _, v := range messageSize {
+		data := testDataMap[v.input]
+		
+		b.Run(fmt.Sprintf("DecryptionOnly_%d_bytes", v.input), func(b *testing.B) {
+
+			for i := 0; i < warmupRuns; i++ {
+				success, err := Decrypt(data.PK, data.SK, data.cipherData)
+				if !success {
+					b.Fatalf("Warm-up decryption failed: %v", err)
+				}
+			}
+			
+
+			b.ResetTimer()
+			
+
+			for i := 0; i < b.N; i++ {
+				b.ReportAllocs()
+				
+				success, err := Decrypt(data.PK, data.SK, data.cipherData)
+				if !success {
+					b.Fatalf("Decryption failed: %v", err)
+				}
+			}
+		})
+	}
+}
+
+
+
+func BenchmarkDistributedIBEDecryptionThroughput(b *testing.B) {
+	const (
+		nParticipants = 4
+		threshold     = 3
+		identity      = "300"
+		warmupRuns    = 3
+	)
+	
+
+	type testData struct {
+		message    string
+		cipherData bytes.Buffer
+		PK         kyber.Point
+		SK         kyber.Point
+	}
+	
+	testDataMap := make(map[int]testData)
+	
+
+	for _, v := range messageSize {
+		message := randomStringGenerator(v.input)
+		var plainData bytes.Buffer
+		plainData.WriteString(message)
+		
+		shares, PK, _, _ := GenerateShares(uint32(nParticipants), uint32(threshold))
+		
+		signers := make([]int, nParticipants)
+		for i := 0; i < nParticipants; i++ {
+			signers[i] = 0
+		}
+		j := 0
+		for j < threshold+1 {
+			randomVal, _ := rand.Int(rand.Reader, big.NewInt(int64(nParticipants)))
+			if signers[randomVal.Int64()] == 0 {
+				signers[randomVal.Int64()] = 1
+				j++
+			}
+		}
+		
+		s := bls.NewBLS12381Suite()
+		var c []Commitment
+		for j := 0; j < nParticipants; j++ {
+			if signers[j] == 1 {
+				c = append(c, Commitment{s.G1().Point().Mul(shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
+			}
+		}
+		
+		var sk []ExtractedKey
+		for k := 0; k < nParticipants; k++ {
+			if signers[k] == 1 {
+				sk = append(sk, Extract(s, shares[k].Value, uint32(k+1), []byte(identity)))
+			}
+		}
+		
+		SK, _ := AggregateSK(s, sk, c, []byte(identity))
+		
+		var cipherData bytes.Buffer
+		_ = enc.Encrypt(PK, []byte(identity), &cipherData, &plainData)
+		
+		testDataMap[v.input] = testData{
+			message:    message,
+			cipherData: cipherData,
+			PK:         PK,
+			SK:         SK,
+		}
+	}
+	
+
+	for _, v := range messageSize {
+		data := testDataMap[v.input]
+		
+		b.Run(fmt.Sprintf("DecryptionThroughput_%d_bytes", v.input), func(b *testing.B) {
+
+			for i := 0; i < warmupRuns; i++ {
+				success, err := Decrypt(data.PK, data.SK, data.cipherData)
+				if !success {
+					b.Fatalf("Warm-up decryption failed: %v", err)
+				}
+			}
+			
+			b.ResetTimer()
+			
+
+			b.SetBytes(int64(v.input))
+			
+			for i := 0; i < b.N; i++ {
+				success, err := Decrypt(data.PK, data.SK, data.cipherData)
+				if !success {
+					b.Fatalf("Decryption failed: %v", err)
+				}
+			}
+		})
+	}
+}
+
+
+
+
+func BenchmarkDistributedIBEEncryptionOnly(b *testing.B) {
+	const (
+		nParticipants = 4
+		threshold     = 3
+		identity      = "300"
+		warmupRuns    = 3
+	)
+	
+
+	type testData struct {
+		message string
+		plainData bytes.Buffer
+		PK       kyber.Point
+	}
+	
+	testDataMap := make(map[int]testData)
+	
+
+	for _, v := range messageSize {
+		message := randomStringGenerator(v.input)
+		var plainData bytes.Buffer
+		plainData.WriteString(message)
+		
+
+		shares, PK, _, _ := GenerateShares(uint32(nParticipants), uint32(threshold))
+		
+
+		_ = shares
+		
+		testDataMap[v.input] = testData{
+			message:   message,
+			plainData: plainData,
+			PK:        PK,
+		}
+	}
+	
+
+	for _, v := range messageSize {
+		data := testDataMap[v.input]
+		
+		b.Run(fmt.Sprintf("EncryptionOnly_%d_bytes", v.input), func(b *testing.B) {
+
+			for i := 0; i < warmupRuns; i++ {
+				var cipherData bytes.Buffer
+				err := enc.Encrypt(data.PK, []byte(identity), &cipherData, &data.plainData)
+				if err != nil {
+					b.Fatalf("Warm-up encryption failed: %v", err)
+				}
+			}
+			
+
+			b.ResetTimer()
+			
+
+			for i := 0; i < b.N; i++ {
+				b.ReportAllocs()
+				
+				var cipherData bytes.Buffer
+				err := enc.Encrypt(data.PK, []byte(identity), &cipherData, &data.plainData)
+				if err != nil {
+					b.Fatalf("Encryption failed: %v", err)
+				}
+			}
+		})
+	}
+}
+
+
+
+func BenchmarkDistributedIBEEncryptionThroughput(b *testing.B) {
+	const (
+		nParticipants = 4
+		threshold     = 3
+		identity      = "300"
+		warmupRuns    = 3
+	)
+	
+
+	type testData struct {
+		message string
+		plainData bytes.Buffer
+		PK       kyber.Point
+	}
+	
+	testDataMap := make(map[int]testData)
+	
+
+	for _, v := range messageSize {
+		message := randomStringGenerator(v.input)
+		var plainData bytes.Buffer
+		plainData.WriteString(message)
+		
+		shares, PK, _, _ := GenerateShares(uint32(nParticipants), uint32(threshold))
+		
+		_ = shares
+		
+		testDataMap[v.input] = testData{
+			message:   message,
+			plainData: plainData,
+			PK:        PK,
+		}
+	}
+	
+
+	for _, v := range messageSize {
+		data := testDataMap[v.input]
+		
+		b.Run(fmt.Sprintf("EncryptionThroughput_%d_bytes", v.input), func(b *testing.B) {
+
+			for i := 0; i < warmupRuns; i++ {
+				var cipherData bytes.Buffer
+				err := enc.Encrypt(data.PK, []byte(identity), &cipherData, &data.plainData)
+				if err != nil {
+					b.Fatalf("Warm-up encryption failed: %v", err)
+				}
+			}
+			
+			b.ResetTimer()
+			
+
+			b.SetBytes(int64(v.input))
+			
+			for i := 0; i < b.N; i++ {
+				var cipherData bytes.Buffer
+				err := enc.Encrypt(data.PK, []byte(identity), &cipherData, &data.plainData)
+				if err != nil {
+					b.Fatalf("Encryption failed: %v", err)
+				}
+			}
+		})
+	}
+}
+
+
+
+func BenchmarkDistributedIBEKeyGenerationOnly(b *testing.B) {
+	const (
+		nParticipants = 4
+		threshold     = 3
+		identity      = "300"
+		warmupRuns    = 3
+	)
+	
+	b.Run(fmt.Sprintf("KeyGeneration_%dp_%dt", nParticipants, threshold), func(b *testing.B) {
+
+		for i := 0; i < warmupRuns; i++ {
+
+			shares, _, _, _ := GenerateShares(uint32(nParticipants), uint32(threshold))
+			
+
+			signers := make([]int, nParticipants)
+			for j := 0; j < nParticipants; j++ {
+				signers[j] = 0
+			}
+			j := 0
+			for j < threshold+1 {
+				randomVal, _ := rand.Int(rand.Reader, big.NewInt(int64(nParticipants)))
+				if signers[randomVal.Int64()] == 0 {
+					signers[randomVal.Int64()] = 1
+					j++
+				}
+			}
+			
+
+			s := bls.NewBLS12381Suite()
+			var c []Commitment
+			for j := 0; j < nParticipants; j++ {
+				if signers[j] == 1 {
+					c = append(c, Commitment{s.G1().Point().Mul(shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
+				}
+			}
+			
+
+			var sk []ExtractedKey
+			for k := 0; k < nParticipants; k++ {
+				if signers[k] == 1 {
+					sk = append(sk, Extract(s, shares[k].Value, uint32(k+1), []byte(identity)))
+				}
+			}
+			
+
+			_, _ = AggregateSK(s, sk, c, []byte(identity))
+		}
+		
+		b.ResetTimer()
+		
+
+		for i := 0; i < b.N; i++ {
+			b.ReportAllocs()
+			
+
+			shares, _, _, _ := GenerateShares(uint32(nParticipants), uint32(threshold))
+			
+
+			signers := make([]int, nParticipants)
+			for j := 0; j < nParticipants; j++ {
+				signers[j] = 0
+			}
+			j := 0
+			for j < threshold+1 {
+				randomVal, _ := rand.Int(rand.Reader, big.NewInt(int64(nParticipants)))
+				if signers[randomVal.Int64()] == 0 {
+					signers[randomVal.Int64()] = 1
+					j++
+				}
+			}
+			
+
+			s := bls.NewBLS12381Suite()
+			var c []Commitment
+			for j := 0; j < nParticipants; j++ {
+				if signers[j] == 1 {
+					c = append(c, Commitment{s.G1().Point().Mul(shares[j].Value, s.G1().Point().Base()), uint32(j + 1)})
+				}
+			}
+			
+
+			var sk []ExtractedKey
+			for k := 0; k < nParticipants; k++ {
+				if signers[k] == 1 {
+					sk = append(sk, Extract(s, shares[k].Value, uint32(k+1), []byte(identity)))
+				}
+			}
+			
+
+			_, _ = AggregateSK(s, sk, c, []byte(identity))
+		}
+	})
 }

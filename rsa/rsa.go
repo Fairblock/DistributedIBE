@@ -8,7 +8,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/base64"
-	"fmt"
+	
 )
 
 type SignedMessage struct {
@@ -34,7 +34,7 @@ func RSA_Decrypt(cipherText string, privKey rsa.PrivateKey) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("Plaintext:", string(plaintext))
+	//fmt.Println("Plaintext:", string(plaintext))
 	return string(plaintext), nil
 }
 
