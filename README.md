@@ -65,6 +65,18 @@ We also broke down the steps to measure the overhead of each stage:
 |    10485760            |      1390764 ns/op       |
 |    104857600           |      1411491 ns/op       |
 
+|  Function |  Number of Validators  |           Execution Time    |
+|--------| -------------         | ------------- |
+|     Aggregation     |  4                   |      5181942 ns/op       |
+|         |  8                   |      10590690 ns/op       |
+|        |  16                   |      22940430 ns/op       |
+|        |  32                   |      45536602 ns/op       |
+|        |  64                   |      94044122 ns/op       |
+|        |  128                   |      179813664 ns/op       |
+|        |  256                   |      377430191 ns/op       |
+|        |  512                   |      771633934 ns/op       |
+|        |  1024                   |      1682627333 ns/op       |
+
 In order to improve the efficiency in case of decrypting large number of messages, we can perform the decryption in parallel. Below shows the execution times for the parallel decryption:
 |  Function |  Number of messages  |           Execution Time    |
 |--------| -------------         | ------------- |
