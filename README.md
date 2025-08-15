@@ -77,6 +77,17 @@ We also broke down the steps to measure the overhead of each stage:
 |        |  512                   |      771633934 ns/op       |
 |        |  1024                   |      1682627333 ns/op       |
 
+| Message Size (bytes)  |           Decryption Time    |
+| -------------         | ------------- |
+|  8                   |      689101 ns/op       |
+|    32                 |      687388 ns/op       |
+|    128                 |      728981 ns/op       |
+|    512                 |      723354 ns/op       |
+|    2048                |      698191 ns/op       |
+|    8192                |      719345 ns/op       |
+|    32768               |      716769 ns/op       |
+|    131072              |      873302 ns/op       |
+
 In order to improve the efficiency in case of decrypting large number of messages, we can perform the decryption in parallel. Below shows the execution times for the parallel decryption:
 |  Function |  Number of messages  |           Execution Time    |
 |--------| -------------         | ------------- |
