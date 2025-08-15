@@ -65,17 +65,17 @@ We also broke down the steps to measure the overhead of each stage:
 |    10485760            |      1390764 ns/op       |
 |    104857600           |      1411491 ns/op       |
 
-|  Function |  Number of Validators  |           Execution Time    |
-|--------| -------------         | ------------- |
-|     Aggregation     |  4                   |      5181942 ns/op       |
-|         |  8                   |      10590690 ns/op       |
-|        |  16                   |      22940430 ns/op       |
-|        |  32                   |      45536602 ns/op       |
-|        |  64                   |      94044122 ns/op       |
-|        |  128                   |      179813664 ns/op       |
-|        |  256                   |      377430191 ns/op       |
-|        |  512                   |      771633934 ns/op       |
-|        |  1024                   |      1682627333 ns/op       |
+| Number of Validators	| Aggregation Time |
+| -------------         | ------------- |
+| 4	| 4.124389 ms/op |
+| 8	| 8.799101 ms/op |
+| 16	| 16.254498 ms/op |
+| 32	| 32.488808 ms/op |
+| 64	| 63.740821 ms/op |
+| 128	| 129.824590 ms/op |
+| 256	| 263.148990 ms/op |
+| 512	| 548.425002 ms/op |
+| 1024	| 1206.202045 ms/op |
 
 | Message Size (bytes)  |           Decryption Time    |
 | -------------         | ------------- |
